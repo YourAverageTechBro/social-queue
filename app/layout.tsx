@@ -1,5 +1,9 @@
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
+import { Suspense } from "react";
+import { FacebookProvider } from "@/app/providers";
+import { Toaster } from "react-hot-toast";
+import { AxiomWebVitals } from "next-axiom";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -18,9 +22,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={GeistSans.className}>
+      <AxiomWebVitals />
+      <Suspense>
+        <FacebookProvider />
+      </Suspense>
       <body className="bg-background text-foreground">
         <main className="min-h-screen flex flex-col items-center">
           {children}
+          <Toaster />
         </main>
       </body>
     </html>
