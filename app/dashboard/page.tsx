@@ -1,14 +1,16 @@
-import { getUser } from "@/app/actions/user";
 import { redirect } from "next/navigation";
+import { getUser } from "@/app/actions/user";
+import Dashboard from "@/app/dashboard/Dashboard";
 
-export default async function Dashboard() {
+export default async function Page() {
   const { user } = await getUser();
   if (!user) {
     redirect("/login");
   }
+
   return (
     <div>
-      <p> hi this is dashboard </p>
+      <Dashboard />
     </div>
   );
 }
