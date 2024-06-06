@@ -81,7 +81,7 @@ export type InstagramAccount = {
   picture: { data: { url: string } };
 };
 
-type FacebookGraphError = {
+export type FacebookGraphError = {
   message: string;
   type: string;
   code: number;

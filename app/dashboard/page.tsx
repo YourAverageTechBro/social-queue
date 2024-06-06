@@ -8,9 +8,5 @@ export default async function Page() {
     redirect("/login");
   }
 
-  return (
-    <div>
-      <Dashboard />
-    </div>
-  );
+  return <Dashboard userId={user.id} />;
 }
