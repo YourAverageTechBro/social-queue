@@ -1,6 +1,6 @@
 "use client";
 
-import ConnectFacebookAccountButton from "@/app/dashboard/ConnectFacebookAccountButton";
+import ConnectFacebookAccountButton from "@/app/accounts/ConnectFacebookAccountButton";
 import { useEffect, useState } from "react";
 import { InstagramAccount } from "@/utils/facebookSdk";
 import { saveInstagramAccount } from "@/app/actions/instagramAccounts";
