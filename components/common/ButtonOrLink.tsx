@@ -31,7 +31,11 @@ export function ButtonOrLink({
 }: Props) {
   const { pending } = useFormStatus();
   if (props.loading || pending) {
-    return <LoadingSpinner />;
+    return (
+      <button {...props} data-tooltip-id={tooltipId} data-tooltip-place="top">
+        <LoadingSpinner />
+      </button>
+    );
   }
   const isLink = typeof href !== "undefined";
 

@@ -50,6 +50,113 @@ export type Database = {
           },
         ]
       }
+      "instagram-posts": {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          instagram_media_id: string
+          parent_social_media_post_id: string
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          instagram_media_id: string
+          parent_social_media_post_id: string
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          instagram_media_id?: string
+          parent_social_media_post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram-posts_parent-social-media-post-id_fkey"
+            columns: ["parent_social_media_post_id"]
+            isOneToOne: false
+            referencedRelation: "social-media-posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram-posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      "social-media-post-media-files": {
+        Row: {
+          created_at: string
+          id: string
+          media_file_path: string
+          parent_social_media_post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          media_file_path: string
+          parent_social_media_post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          media_file_path?: string
+          parent_social_media_post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social-media-post-media-files_parent-social-media-post-id_fkey"
+            columns: ["parent_social_media_post_id"]
+            isOneToOne: false
+            referencedRelation: "social-media-posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social-media-post-media-files_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      "social-media-posts": {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social-media-posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
