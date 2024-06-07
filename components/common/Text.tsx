@@ -7,11 +7,11 @@ const textStyles = cva("", {
       title: "font-bold text-3xl",
       subtitle: "font-medium text-xl",
       body: "font-medium text-md",
-      error: "font-medium text-md text-red-500",
     },
     color: {
       black: "text-black",
       white: "text-white",
+      error: "text-red-500",
     },
     alignment: {
       left: "text-left",
@@ -31,6 +31,7 @@ type TextProps = {
 };
 
 export interface Props extends TextProps, VariantProps<typeof textStyles> {}
+
 const Text = ({ intent, color, alignment, ...props }: Props) => (
   <p className={textStyles({ alignment, intent, color })}>{props.text}</p>
 );

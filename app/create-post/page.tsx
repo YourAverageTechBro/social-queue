@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 
+export const maxDuration = 300;
+
 const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
   const supabase = createClient();
   const { data, error } = await supabase
