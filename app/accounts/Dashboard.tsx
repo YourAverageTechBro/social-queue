@@ -10,6 +10,7 @@ import { useFormState } from "react-dom";
 import { Button } from "@/components/common/Button";
 import Text from "@/components/common/Text";
 import toast from "react-hot-toast";
+import TikTokLoginButton from "@/app/accounts/TikTokLoginButton";
 import ConnectInstagramAccountButton from "@/app/accounts/ConnectInstagramAccountButton";
 import ConnectYoutubeAccountButton from "./ConnectYoutubeAccountButton";
 import { Tables } from "@/types/supabase";
@@ -17,6 +18,7 @@ import Icons from "@/components/common/Icons";
 import { deleteYoutubeChannel } from "../actions/youtube";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import Modal from "@/components/common/Modal";
+import TikTokLoginButton from "@/app/accounts/TikTokLoginButton";
 
 export default function Dashboard({
   userId,
@@ -135,6 +137,7 @@ export default function Dashboard({
       <div className="mt-8">
         <Text intent={"title"} text={"Connect A New Account"} />
         <div className="flex items-center gap-2 mt-4 justify-center">
+          <TikTokLoginButton />
           <ConnectYoutubeAccountButton />
           <ConnectInstagramAccountButton
             setAppScopedUserId={setAppScopedUserId}
