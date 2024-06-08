@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { FacebookProvider } from "@/app/providers";
 import { Toaster } from "react-hot-toast";
 import { AxiomWebVitals } from "next-axiom";
+import HeaderBar from "@/components/common/HeaderBar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -28,6 +29,7 @@ export default function RootLayout({
       </Suspense>
       <body className="bg-background text-foreground">
         <main className="min-h-screen flex flex-col items-center">
+          <HeaderBar />
           {children}
           <Toaster />
         </main>
