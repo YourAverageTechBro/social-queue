@@ -4,6 +4,7 @@ import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import { FacebookGraphError } from "@/utils/facebookSdk";
+import { postVideoToYoutube } from "./youtube";
 
 const bucketName = process.env.SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
 
@@ -17,9 +18,13 @@ export const processSocialMediaPost = async (data: FormData) => {
     files.push(data.get(`file${i}`) as File);
   }
   const caption = data.get("caption") as string;
+  const youtubeTitle = data.get("youtubeTitle") as string;
   const instagramBusinessAccountIds = (
-    data.get("instagramBusinessAccountIds") as string
-  ).split(",");
+    data.get("instagramBusinessAccountIds") as string | null
+  )?.split(",");
+  const youtubeChannelIds = (
+    data.get("youtubeChannelIds") as string | null
+  )?.split(",");
   const logger = new Logger().with({
     function: "processSocialMediaPost",
     numberOfFiles,
@@ -33,8 +38,10 @@ export const processSocialMediaPost = async (data: FormData) => {
       userId,
       file: files[0],
       caption,
-      instagramBusinessAccountIds,
+      instagramBusinessAccountIds: instagramBusinessAccountIds ?? [],
       postType: files[0].type.includes("video") ? "video" : "image",
+      youtubeChannelIds: youtubeChannelIds ?? [],
+      youtubeTitle,
     });
   } else if (files.length > 1) {
     logger.info("Uploading social media carousel post");
@@ -42,7 +49,7 @@ export const processSocialMediaPost = async (data: FormData) => {
       userId,
       files,
       caption,
-      instagramBusinessAccountIds,
+      instagramBusinessAccountIds: instagramBusinessAccountIds ?? [],
     });
   } else {
     logger.error(errorString, { error: "No files found in request" });
@@ -167,12 +174,16 @@ export const uploadSingleSocialMediaPost = async ({
   caption,
   instagramBusinessAccountIds,
   postType,
+  youtubeChannelIds,
+  youtubeTitle,
 }: {
   userId: string;
   file: File;
-  caption: string;
+  caption?: string;
   instagramBusinessAccountIds: string[];
   postType: PostType;
+  youtubeChannelIds: string[];
+  youtubeTitle?: string;
 }) => {
   const logger = new Logger().with({
     function: "uploadSingleSocialMediaPost",
@@ -180,6 +191,7 @@ export const uploadSingleSocialMediaPost = async ({
     caption,
     instagramBusinessAccountIds,
     postType,
+    youtubeChannelIds,
   });
   let socialMediaPostId = "";
   let filePath = "";
@@ -217,8 +229,20 @@ export const uploadSingleSocialMediaPost = async ({
         await saveInstagramId({
           instagramMediaId,
           parentSocialMediaPostId: socialMediaPostId,
-          caption,
+          caption: caption ?? "",
           userId,
+        });
+      })
+    );
+    await Promise.all(
+      youtubeChannelIds.map(async (youtubeChannelId) => {
+        await postVideoToYoutube({
+          youtubeChannelId,
+          video: file,
+          title: youtubeTitle ?? "",
+          userId,
+          parentSocialMediaPostId: socialMediaPostId,
+          youtubeTitle: youtubeTitle ?? "",
         });
       })
     );

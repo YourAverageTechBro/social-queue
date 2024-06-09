@@ -6,17 +6,22 @@ export default function TextArea({
   disabled,
   name,
   placeholder,
+  value,
+  setValue,
 }: {
   name: string;
   title?: string;
   characterLimit?: number;
   disabled?: boolean;
   placeholder?: string;
+  value?: string;
+  setValue?: (value: string) => void;
 }) {
   const [textLength, setTextLength] = useState(0);
 
   const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setTextLength(event.target.value.length);
+    setValue?.(event.target.value);
   };
   return (
     <div className={"w-full"}>
@@ -36,6 +41,7 @@ export default function TextArea({
         disabled={disabled}
         onChange={handleTextChange}
         placeholder={placeholder}
+        value={value}
       />
       {characterLimit && (
         <p

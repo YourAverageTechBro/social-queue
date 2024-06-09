@@ -92,7 +92,7 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
               );
             }
             const { error } = await supabase.from("youtube-channels").insert({
-              access_token: accessToken,
+              credentials: { ...tokens },
               channel_custom_url: customUrl,
               profile_picture_path: thumbnail,
               id: channelId,
