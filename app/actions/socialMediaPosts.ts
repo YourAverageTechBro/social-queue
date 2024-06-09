@@ -7,16 +7,180 @@ import { FacebookGraphError } from "@/utils/facebookSdk";
 
 const bucketName = process.env.SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
 
-export const uploadSocialMediaPost = async (prevState: any, data: FormData) => {
-  const logger = new Logger().with({
-    function: "uploadSocialMediaPost",
-  });
+type PostType = "video" | "image";
+
+export const processSocialMediaPost = async (data: FormData) => {
   const userId = data.get("userId") as string;
-  const file = data.get("mediaFile") as File;
+  const numberOfFiles = parseInt(data.get("numberOfFiles") as string);
+  let files = [];
+  for (let i = 0; i < numberOfFiles; i++) {
+    files.push(data.get(`file${i}`) as File);
+  }
   const caption = data.get("caption") as string;
   const instagramBusinessAccountIds = (
     data.get("instagramBusinessAccountIds") as string
   ).split(",");
+  const logger = new Logger().with({
+    function: "processSocialMediaPost",
+    numberOfFiles,
+    userId,
+    caption,
+    instagramBusinessAccountIds,
+  });
+  if (files.length === 1) {
+    logger.info("Uploading single social media post");
+    return await uploadSingleSocialMediaPost({
+      userId,
+      file: files[0],
+      caption,
+      instagramBusinessAccountIds,
+      postType: files[0].type.includes("video") ? "video" : "image",
+    });
+  } else if (files.length > 1) {
+    logger.info("Uploading social media carousel post");
+    return uploadSocialMediaCarouselPost({
+      userId,
+      files,
+      caption,
+      instagramBusinessAccountIds,
+    });
+  } else {
+    logger.error(errorString, { error: "No files found in request" });
+    await logger.flush();
+    return {
+      error: "Sorry, something went wrong. Our team is looking into it.",
+    };
+  }
+};
+
+export const uploadSocialMediaCarouselPost = async ({
+  userId,
+  files,
+  caption,
+  instagramBusinessAccountIds,
+}: {
+  userId: string;
+  files: File[];
+  caption: string;
+  instagramBusinessAccountIds: string[];
+}) => {
+  const logger = new Logger().with({
+    function: "uploadSocialMediaCarouselPost",
+    userId,
+    caption,
+    instagramBusinessAccountIds,
+  });
+  let socialMediaPostId = "";
+  let filePaths: { filePath: string; postType: PostType }[] = [];
+
+  const supabase = createClient();
+
+  try {
+    socialMediaPostId = await createSocialMediaPost(userId);
+    filePaths = await Promise.all(
+      files.map(async (file, index) => {
+        return {
+          filePath: await uploadSocialMediaPostFile({
+            userId,
+            file,
+            index,
+            postId: socialMediaPostId,
+          }),
+          postType: file.type.includes("video") ? "video" : "image",
+        };
+      })
+    );
+    await Promise.all(
+      instagramBusinessAccountIds.map(async (instagramBusinessAccountId) => {
+        const instagramCarouselMediaContainerIds = await Promise.all(
+          filePaths.map(({ filePath, postType }) =>
+            createInstagramContainer({
+              instagramBusinessAccountId,
+              filePath,
+              userId,
+              postType,
+              isCarouselItem: true,
+            })
+          )
+        );
+        await checkInstagramContainerStatus({
+          containerIds: instagramCarouselMediaContainerIds,
+          instagramBusinessAccountId,
+          userId,
+        });
+        const instagramMediaContainerId =
+          await createInstagramCarouselContainer({
+            instagramCarouselMediaContainerIds,
+            instagramBusinessAccountId,
+            userId,
+            caption,
+          });
+        await checkInstagramContainerStatus({
+          containerIds: [instagramMediaContainerId],
+          instagramBusinessAccountId,
+          userId,
+        });
+        const instagramMediaId = await publishInstagramMediaContainer({
+          instagramBusinessAccountId,
+          instagramMediaContainerId,
+          userId,
+        });
+        await saveInstagramId({
+          instagramMediaId,
+          parentSocialMediaPostId: socialMediaPostId,
+          caption,
+          userId,
+        });
+      })
+    );
+    return {
+      data: "Your post has successfully been published to your social media accounts 🎉",
+    };
+  } catch (error) {
+    logger.error(errorString, {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    });
+    await logger.flush();
+    if (socialMediaPostId) {
+      await supabase
+        .from("social-media-posts")
+        .delete()
+        .eq("id", socialMediaPostId);
+    }
+    if (filePaths.length > 0) {
+      await Promise.all(
+        filePaths.map(async ({ filePath }) => {
+          await supabase.storage.from(bucketName!).remove([filePath]);
+        })
+      );
+    }
+    return {
+      error:
+        "Sorry, we ran into an error uploading your social media post. Please try again.",
+    };
+  }
+};
+
+export const uploadSingleSocialMediaPost = async ({
+  userId,
+  file,
+  caption,
+  instagramBusinessAccountIds,
+  postType,
+}: {
+  userId: string;
+  file: File;
+  caption: string;
+  instagramBusinessAccountIds: string[];
+  postType: PostType;
+}) => {
+  const logger = new Logger().with({
+    function: "uploadSingleSocialMediaPost",
+    userId,
+    caption,
+    instagramBusinessAccountIds,
+    postType,
+  });
   let socialMediaPostId = "";
   let filePath = "";
 
@@ -37,9 +201,11 @@ export const uploadSocialMediaPost = async (prevState: any, data: FormData) => {
           filePath,
           caption,
           userId,
+          postType,
+          isCarouselItem: false,
         });
         await checkInstagramContainerStatus({
-          containerId: instagramMediaContainerId,
+          containerIds: [instagramMediaContainerId],
           instagramBusinessAccountId,
           userId,
         });
@@ -99,7 +265,9 @@ const createSocialMediaPost = async (userId: string) => {
     throw error;
   }
   if (!data) {
-    logger.error("No data returned from social-media-posts insert");
+    logger.error(errorString, {
+      error: "No data returned from social-media-posts insert",
+    });
     await logger.flush();
     throw new Error("No data returned from social-media-posts insert");
   }
@@ -126,7 +294,9 @@ const uploadSocialMediaPostFile = async ({
 
   const supabase = createClient();
   if (!bucketName) {
-    logger.error("No bucket name found in environment variables");
+    logger.error(errorString, {
+      error: "No bucket name found in environment variables",
+    });
     await logger.flush();
     throw new Error("No bucket name found in environment variables");
   }
@@ -176,11 +346,15 @@ const createInstagramContainer = async ({
   filePath,
   caption,
   userId,
+  postType,
+  isCarouselItem,
 }: {
   instagramBusinessAccountId: string;
   filePath: string;
-  caption: string;
+  caption?: string;
   userId: string;
+  postType: PostType;
+  isCarouselItem: boolean;
 }) => {
   let logger = new Logger().with({
     function: "createInstagramContainer",
@@ -188,6 +362,8 @@ const createInstagramContainer = async ({
     filePath,
     caption,
     userId,
+    postType,
+    isCarouselItem,
   });
   const accessToken = await fetchAccessTokenForInstagramBusinessAccountId({
     instagramBusinessAccountId,
@@ -195,31 +371,69 @@ const createInstagramContainer = async ({
   });
 
   if (!bucketName) {
-    logger.error("No bucket name found in environment variables");
+    logger.error(errorString, {
+      error: "No bucket name found in environment variables",
+    });
     await logger.flush();
     throw new Error("No bucket name found in environment variables");
   }
   const supabase = createClient();
   const { data, error } = await supabase.storage
     .from(bucketName)
-    .createSignedUrl(filePath, 60);
+    .createSignedUrl(filePath, 600);
   if (error) {
     logger.error(errorString, error);
     await logger.flush();
     throw error;
   }
   if (!data) {
-    logger.error("No signed url returned for file");
+    logger.error(errorString, { error: "No signed url returned for file" });
     await logger.flush();
     throw new Error("No signed url returned for file");
   }
-  const graphUrl = `https://graph.facebook.com/v${
-    process.env.FACEBOOK_GRAPH_API_VERSION
-  }/${instagramBusinessAccountId}/media?video_url=${
-    data.signedUrl
-  }&caption=${encodeURIComponent(
-    caption
-  )}&access_token=${accessToken}&media_type=REELS`;
+  const videoSearchParams = {
+    video_url: data.signedUrl,
+    caption,
+    media_type: "REELS",
+  };
+  const imageSearchParams = {
+    image_url: data.signedUrl,
+    caption,
+  };
+  let carouselSearchParams = {};
+  if (postType === "video") {
+    carouselSearchParams = {
+      video_url: data.signedUrl,
+      media_type: "REELS",
+      is_carousel_item: true,
+    };
+  } else if (postType === "image") {
+    carouselSearchParams = {
+      is_carousel_item: true,
+      image_url: data.signedUrl,
+    };
+  }
+  let finalSearchParams = null;
+  if (isCarouselItem) {
+    finalSearchParams = carouselSearchParams;
+  } else if (postType === "video") {
+    finalSearchParams = videoSearchParams;
+  } else if (postType === "image") {
+    finalSearchParams = imageSearchParams;
+  }
+  logger = logger.with({ finalSearchParams });
+  if (!finalSearchParams) {
+    logger.error(errorString, {
+      error: "No search params found for post type",
+    });
+    await logger.flush();
+    throw new Error("No search params found for post type");
+  }
+  const graphUrl = buildGraphAPIURL({
+    path: `/${instagramBusinessAccountId}/media`,
+    searchParams: finalSearchParams,
+    accessToken,
+  });
   logger = logger.with({ graphUrl });
   const resp = await fetch(graphUrl, {
     method: "POST",
@@ -242,18 +456,79 @@ const createInstagramContainer = async ({
   return id;
 };
 
+const createInstagramCarouselContainer = async ({
+  instagramCarouselMediaContainerIds,
+  instagramBusinessAccountId,
+  userId,
+  caption,
+}: {
+  instagramCarouselMediaContainerIds: string[];
+  instagramBusinessAccountId: string;
+  userId: string;
+  caption: string;
+}) => {
+  const accessToken = await fetchAccessTokenForInstagramBusinessAccountId({
+    instagramBusinessAccountId,
+    userId,
+  });
+  let logger = new Logger().with({
+    function: "createInstagramCarouselContainer",
+    instagramCarouselMediaContainerIds,
+    instagramBusinessAccountId,
+    userId,
+    caption,
+  });
+
+  const graphUrl = buildGraphAPIURL({
+    path: `/${instagramBusinessAccountId}/media`,
+    searchParams: {
+      caption,
+      media_type: "CAROUSEL",
+      children: instagramCarouselMediaContainerIds.join(","),
+    },
+    accessToken,
+  });
+
+  logger = logger.with({ graphUrl });
+
+  const resp = await fetch(graphUrl, {
+    method: "POST",
+  });
+
+  const { error: facebookGraphError, id } = (await resp.json()) as {
+    error: FacebookGraphError;
+    id: string;
+  };
+
+  if (facebookGraphError) {
+    logger.error(errorString, facebookGraphError);
+    await logger.flush();
+    throw new Error("Failed creating carousel container");
+  }
+  await logger.flush();
+  return id;
+};
+
+type StatusCode =
+  | "EXPIRED"
+  | "ERROR"
+  | "FINISHED"
+  | "IN_PROGRESS"
+  | "PUBLISHED"
+  | null;
+
 const checkInstagramContainerStatus = async ({
-  containerId,
+  containerIds,
   instagramBusinessAccountId,
   userId,
 }: {
-  containerId: string;
+  containerIds: string[];
   instagramBusinessAccountId: string;
   userId: string;
 }) => {
   let logger = new Logger().with({
     function: "checkInstagramContainerStatus",
-    containerId,
+    containerIds,
     instagramBusinessAccountId,
     userId,
   });
@@ -263,40 +538,67 @@ const checkInstagramContainerStatus = async ({
     userId,
   });
 
-  let statusCode:
-    | "EXPIRED"
-    | "ERROR"
-    | "FINISHED"
-    | "IN_PROGRESS"
-    | "PUBLISHED"
-    | null = null;
+  const checkStatus = async (containerId: string): Promise<StatusCode> => {
+    let statusCode: StatusCode = null;
 
-  const graphUrl = `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}/${containerId}?fields=status_code&access_token=${accessToken}`;
-  logger = logger.with({ graphUrl });
-  while (statusCode != "FINISHED") {
-    const resp = await fetch(graphUrl, {
-      method: "GET",
+    const graphUrl = buildGraphAPIURL({
+      path: `/${containerId}`,
+      searchParams: {
+        fields: "status_code",
+      },
+      accessToken,
     });
-    const { error, status_code } = (await resp.json()) as {
-      error: FacebookGraphError;
-      status_code:
-        | "EXPIRED"
-        | "ERROR"
-        | "FINISHED"
-        | "IN_PROGRESS"
-        | "PUBLISHED";
-    };
-    statusCode = status_code;
-    if (error) {
-      logger.error(errorString, error);
-      await logger.flush();
-      throw new Error("Failed checking media container status");
+
+    while (statusCode !== "FINISHED") {
+      const resp = await fetch(graphUrl, {
+        method: "GET",
+      });
+      const {
+        error,
+        status_code,
+      }: { error: FacebookGraphError; status_code: StatusCode } =
+        await resp.json();
+
+      statusCode = status_code;
+
+      if (error) {
+        logger.error("Failed checking media container status", error);
+        await logger.flush();
+        throw new Error("Failed checking media container status");
+      }
+      if (statusCode === "ERROR") {
+        logger.error("Media container processing failed", {
+          containerId,
+          status_code,
+        });
+        await logger.flush();
+        throw new Error("Media container processing failed");
+      }
+      if (statusCode === "EXPIRED") {
+        logger.error("Media container processing expired", {
+          containerId,
+          status_code,
+        });
+        await logger.flush();
+        throw new Error("Media container processing expired");
+      }
+
+      logger.info("Checked media container status", {
+        containerId,
+        statusCode,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 10000)); // wait for 30 seconds
     }
 
-    logger.info("Checked media container status", { statusCode });
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // wait for 3 seconds
-    // TODO Error handle different status_codes
-  }
+    return statusCode;
+  };
+
+  // Run checkStatus for all containerIds concurrently
+  const statusPromises = containerIds.map(checkStatus);
+  await Promise.all(statusPromises);
+
+  logger.info("All containers have finished processing", { containerIds });
+  await logger.flush();
 };
 
 const publishInstagramMediaContainer = async ({
@@ -319,7 +621,13 @@ const publishInstagramMediaContainer = async ({
     instagramBusinessAccountId,
     userId,
   });
-  const graphUrl = `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}/${instagramBusinessAccountId}/media_publish?creation_id=${instagramMediaContainerId}&access_token=${accessToken}`;
+  const graphUrl = buildGraphAPIURL({
+    path: `/${instagramBusinessAccountId}/media_publish`,
+    searchParams: {
+      creation_id: instagramMediaContainerId,
+    },
+    accessToken,
+  });
   logger = logger.with({ graphUrl });
   const resp = await fetch(graphUrl, {
     method: "POST",
@@ -367,12 +675,16 @@ const fetchAccessTokenForInstagramBusinessAccountId = async ({
   }
 
   if (!data) {
-    logger.error("No data returned from instagram-accounts select");
+    logger.error(errorString, {
+      error: "No data returned from instagram-accounts select",
+    });
     await logger.flush();
     throw new Error("No data returned from instagram-accounts select");
   }
   if (data.length === 0) {
-    logger.error("No data returned from instagram-accounts select");
+    logger.error(errorString, {
+      error: "No data returned from instagram-accounts select",
+    });
     await logger.flush();
     throw new Error("No data returned from instagram-accounts select");
   }
@@ -412,4 +724,34 @@ const saveInstagramId = async ({
   }
   logger.info("Instagram media id saved");
   await logger.flush();
+};
+
+const GRAPH_API_BASE_URL = `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}`;
+
+const buildGraphAPIURL = ({
+  path,
+  searchParams,
+  accessToken,
+}: {
+  path: string;
+  searchParams: Record<string, string | null | undefined>;
+  accessToken?: string;
+}): string => {
+  const url = new URL(path, GRAPH_API_BASE_URL);
+
+  Object.keys(searchParams).forEach((key) => {
+    if (!searchParams[key]) {
+      delete searchParams[key];
+    }
+  });
+
+  url.search = new URLSearchParams(
+    searchParams as Record<string, string>
+  ).toString();
+
+  if (accessToken) {
+    url.searchParams.append("access_token", accessToken);
+  }
+
+  return url.toString();
 };
