@@ -85,7 +85,7 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
                 `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
               );
             }
-            const { error } = await supabase.from("youtube-channels").insert({
+            const { error } = await supabase.from("youtube-channels").upsert({
               channel_custom_url: customUrl,
               profile_picture_path: thumbnail,
               id: channels[0].id,
