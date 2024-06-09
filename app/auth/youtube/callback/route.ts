@@ -66,10 +66,16 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
             }
             const customUrl = snippet.customUrl;
             const thumbnail = snippet.thumbnails?.default?.url;
+            const accessToken = tokens.access_token;
+            const channelId = channels[0].id;
 
-            if (!customUrl || !thumbnail) {
+            if (!customUrl || !thumbnail || !accessToken || !channelId) {
               logger.error(errorString, {
-                error: "No customUrl or thumbnail found.",
+                error: "Essential channel details are missing or incomplete.",
+                customUrl,
+                thumbnail,
+                accessToken,
+                channelId,
               });
               return NextResponse.redirect(
                 `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
@@ -85,11 +91,11 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
                 `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
               );
             }
-            const { error } = await supabase.from("youtube-channels").upsert({
+            const { error } = await supabase.from("youtube-channels").insert({
+              access_token: accessToken,
               channel_custom_url: customUrl,
               profile_picture_path: thumbnail,
-              id: channels[0].id,
-              access_token: tokens.access_token,
+              id: channelId,
               user_id: userId,
             });
             if (error) {

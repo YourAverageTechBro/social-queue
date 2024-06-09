@@ -161,7 +161,6 @@ export type Database = {
         Row: {
           access_token: string
           channel_custom_url: string
-          channel_id: string
           created_at: string
           id: string
           profile_picture_path: string
@@ -170,16 +169,14 @@ export type Database = {
         Insert: {
           access_token: string
           channel_custom_url: string
-          channel_id: string
           created_at?: string
-          id?: string
+          id: string
           profile_picture_path: string
           user_id: string
         }
         Update: {
           access_token?: string
           channel_custom_url?: string
-          channel_id?: string
           created_at?: string
           id?: string
           profile_picture_path?: string
