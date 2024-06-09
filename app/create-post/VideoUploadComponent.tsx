@@ -54,18 +54,7 @@ export default function VideoUploadComponent({
   );
   const [error, setError] = useState<string>("");
   const [successString, setSuccessString] = useState<string>("");
-  // const [state, formAction] = useFormState(uploadSocialMediaPost, {
-  //   error: "",
-  // });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // useEffect(() => {
-  //   if (state.error) {
-  //     setError(state.error);
-  //   }
-  //   if (state.data) {
-  //     setSuccessString(state.data);
-  //   }
-  // }, [state]);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
