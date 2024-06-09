@@ -7,6 +7,7 @@ import { saveInstagramAccount } from "@/app/actions/instagramAccounts";
 import { useFormState } from "react-dom";
 import { Button } from "@/components/common/Button";
 import toast from "react-hot-toast";
+import YoutubeLoginButton from "./YoutubeLoginButton";
 
 export default function Dashboard({ userId }: { userId: string }) {
   const [appScopedUserId, setAppScopedUserId] = useState<string>("");
@@ -28,6 +29,7 @@ export default function Dashboard({ userId }: { userId: string }) {
 
   return (
     <div>
+      <YoutubeLoginButton />
       <ConnectFacebookAccountButton
         setAppScopedUserId={setAppScopedUserId}
         setInstagramAccounts={setInstagramAccounts}

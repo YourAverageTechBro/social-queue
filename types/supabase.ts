@@ -157,6 +157,44 @@ export type Database = {
           },
         ]
       }
+      "youtube-channels": {
+        Row: {
+          access_token: string
+          channel_custom_url: string
+          channel_id: string
+          created_at: string
+          id: string
+          profile_picture_path: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          channel_custom_url: string
+          channel_id: string
+          created_at?: string
+          id?: string
+          profile_picture_path: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          channel_custom_url?: string
+          channel_id?: string
+          created_at?: string
+          id?: string
+          profile_picture_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube-channels_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
