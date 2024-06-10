@@ -270,7 +270,7 @@ export const uploadSingleSocialMediaPost = async ({
   }
 };
 
-const createSocialMediaPost = async (userId: string) => {
+export const createSocialMediaPost = async (userId: string) => {
   const logger = new Logger().with({
     function: "createSocialMediaPost",
     userId,
@@ -286,21 +286,25 @@ const createSocialMediaPost = async (userId: string) => {
   if (error) {
     logger.error(errorString, error);
     await logger.flush();
-    throw error;
+    throw new Error(
+      "Sorry, we had an issue creating your post. Please try again."
+    );
   }
   if (!data) {
     logger.error(errorString, {
       error: "No data returned from social-media-posts insert",
     });
     await logger.flush();
-    throw new Error("No data returned from social-media-posts insert");
+    throw new Error(
+      "Sorry, we had an issue creating your post. Please try again."
+    );
   }
   logger.info("Social media post created", { socialMediaPostId: data[0].id });
   await logger.flush();
   return data[0].id;
 };
 
-const uploadSocialMediaPostFile = async ({
+export const uploadSocialMediaPostFile = async ({
   userId,
   file,
   index,
@@ -322,7 +326,7 @@ const uploadSocialMediaPostFile = async ({
       error: "No bucket name found in environment variables",
     });
     await logger.flush();
-    throw new Error("No bucket name found in environment variables");
+    throw Error("Sorry, something went wrong. The team is looking into it.");
   }
 
   const filePath = `${userId}/${postId}/${index}.${
@@ -336,7 +340,9 @@ const uploadSocialMediaPostFile = async ({
   if (uploadError) {
     logger.error(errorString, uploadError);
     await logger.flush();
-    throw uploadError;
+    throw Error(
+      "Sorry, we had an issue uploading your file. Please try again."
+    );
   }
   if (!uploadResponse?.path) {
     logger.error(errorString, {
@@ -357,7 +363,9 @@ const uploadSocialMediaPostFile = async ({
   if (insertError) {
     logger.error(errorString, insertError);
     await logger.flush();
-    throw insertError;
+    throw Error(
+      "Sorry, we had an issue uploading your file. Please try again."
+    );
   }
 
   logger.info("Social media post file uploaded", { file: file.name });
@@ -365,7 +373,7 @@ const uploadSocialMediaPostFile = async ({
   return uploadResponse.path;
 };
 
-const createInstagramContainer = async ({
+export const createInstagramContainer = async ({
   instagramBusinessAccountId,
   filePath,
   caption,
@@ -480,7 +488,7 @@ const createInstagramContainer = async ({
   return id;
 };
 
-const createInstagramCarouselContainer = async ({
+export const createInstagramCarouselContainer = async ({
   instagramCarouselMediaContainerIds,
   instagramBusinessAccountId,
   userId,
@@ -541,7 +549,7 @@ type StatusCode =
   | "PUBLISHED"
   | null;
 
-const checkInstagramContainerStatus = async ({
+export const checkInstagramContainerStatus = async ({
   containerIds,
   instagramBusinessAccountId,
   userId,
@@ -563,6 +571,8 @@ const checkInstagramContainerStatus = async ({
   });
 
   const checkStatus = async (containerId: string): Promise<StatusCode> => {
+    let numberOfPolls = 0;
+    const maxNumberOfPolls = 15;
     let statusCode: StatusCode = null;
 
     const graphUrl = buildGraphAPIURL({
@@ -606,12 +616,20 @@ const checkInstagramContainerStatus = async ({
         await logger.flush();
         throw new Error("Media container processing expired");
       }
+      if (numberOfPolls >= maxNumberOfPolls) {
+        logger.error("Status check timed out", {
+          containerId,
+        });
+        await logger.flush();
+        throw new Error("Status check timed out");
+      }
 
       logger.info("Checked media container status", {
         containerId,
         statusCode,
       });
-      await new Promise((resolve) => setTimeout(resolve, 10000)); // wait for 30 seconds
+      await new Promise((resolve) => setTimeout(resolve, 15000));
+      numberOfPolls++;
     }
 
     return statusCode;
@@ -625,7 +643,7 @@ const checkInstagramContainerStatus = async ({
   await logger.flush();
 };
 
-const publishInstagramMediaContainer = async ({
+export const publishInstagramMediaContainer = async ({
   instagramBusinessAccountId,
   instagramMediaContainerId,
   userId,
@@ -717,7 +735,7 @@ const fetchAccessTokenForInstagramBusinessAccountId = async ({
   return data[0].access_token;
 };
 
-const saveInstagramId = async ({
+export const saveInstagramId = async ({
   instagramMediaId,
   parentSocialMediaPostId,
   caption,
