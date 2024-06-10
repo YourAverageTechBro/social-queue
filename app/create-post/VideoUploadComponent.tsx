@@ -11,6 +11,8 @@ import { Tables } from "@/types/supabase";
 import Text from "@/components/common/Text";
 import TextArea from "@/components/common/TextArea";
 import { processSocialMediaPost } from "@/app/actions/socialMediaPosts";
+import Icons from "@/components/common/Icons";
+import TextInput from "@/components/common/TextInput";
 
 const MemoizedMedia = memo(
   function Media({ file, onRemove }: { file: File; onRemove: () => void }) {
@@ -41,17 +43,24 @@ const MemoizedMedia = memo(
 
 export default function VideoUploadComponent({
   instagramAccounts,
+  youtubeChannels,
   userId,
 }: {
   instagramAccounts: Tables<"instagram-accounts">[];
+  youtubeChannels: Tables<"youtube-channels">[];
   userId: string;
 }) {
   const [selectedInstagramAccounts, setSelectedInstagramAccounts] = useState<
     Tables<"instagram-accounts">[]
   >([]);
+  const [selectedYoutubeChannels, setSelectedYoutubeChannels] = useState<
+    Tables<"youtube-channels">[]
+  >([]);
   const [files, setFiles] = useState<{ file: File; errorMessage: string }[]>(
     []
   );
+  const [youtubeTitle, setYoutubeTitle] = useState<string>("");
+  const [caption, setCaption] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [successString, setSuccessString] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -179,12 +188,37 @@ export default function VideoUploadComponent({
               }}
               key={account.id}
             >
-              <img
-                src={account.picture_url}
-                alt={account.account_name}
-                className={"w-8 h-8 rounded-full"}
-              />
+              <div className="relative w-8 h-8">
+                <img
+                  src={account.picture_url}
+                  alt={account.account_name}
+                  className="w-8 h-8 rounded-full"
+                />
+                <Icons.instagram className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
+              </div>
               <Text text={account.account_name} />
+            </button>
+          ))}
+          {youtubeChannels.map((channel) => (
+            <button
+              className={`p-4 rounded-lg bg-gray-800 flex items-center gap-2 ${
+                selectedYoutubeChannels.find((ch) => ch.id === channel.id) &&
+                "border-2 border-orange-500"
+              }`}
+              onClick={() => {
+                setSelectedYoutubeChannels((prev) => [...prev, channel]);
+              }}
+              key={channel.id}
+            >
+              <div className="relative w-8 h-8">
+                <img
+                  src={channel.profile_picture_path}
+                  alt={channel.channel_custom_url}
+                  className="w-8 h-8 rounded-full"
+                />
+                <Icons.youtube className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
+              </div>
+              <Text text={channel.channel_custom_url} />
             </button>
           ))}
         </div>
@@ -217,27 +251,55 @@ export default function VideoUploadComponent({
             accept="video/mp4, video/quicktime, image/jpeg"
           />
           <input type={"hidden"} name={"numberOfFiles"} value={files.length} />
-          <input
-            type={"hidden"}
-            name={"instagramBusinessAccountIds"}
-            value={selectedInstagramAccounts
-              .map((entry) => entry.instagram_business_account_id)
-              .join(",")}
-          />
-
-          <TextArea
-            title={"Caption"}
-            name={"caption"}
-            placeholder={
-              "Check out thecontentmarketingblueprint.com for help with social media marketing!"
-            }
-          />
+          {selectedInstagramAccounts.length > 0 && (
+            <input
+              type={"hidden"}
+              name={"instagramBusinessAccountIds"}
+              value={selectedInstagramAccounts
+                .map((entry) => entry.instagram_business_account_id)
+                .join(",")}
+            />
+          )}
+          {selectedYoutubeChannels.length > 0 && (
+            <input
+              type={"hidden"}
+              name={"youtubeChannelIds"}
+              value={selectedYoutubeChannels.map((entry) => entry.id).join(",")}
+            />
+          )}
+          {selectedInstagramAccounts.length > 0 && (
+            <TextArea
+              title={"Caption"}
+              name={"caption"}
+              placeholder={
+                "Check out thecontentmarketingblueprint.com for help with social media marketing!"
+              }
+            />
+          )}
+          {selectedYoutubeChannels.length > 0 && (
+            <TextInput
+              name={"youtubeTitle"}
+              title={"Youtube Title"}
+              placeholder={
+                "Check out thecontentmarketingblueprint.com for help with social media marketing!"
+              }
+              required={true}
+              maxLength={100}
+              type={"text"}
+              value={youtubeTitle}
+              setValue={setYoutubeTitle}
+            />
+          )}
           <Button
             disabled={
-              selectedInstagramAccounts.length === 0 ||
+              (selectedInstagramAccounts.length === 0 &&
+                selectedYoutubeChannels.length === 0) ||
               error.length > 0 ||
               files.length === 0 ||
-              files.some((entry) => entry.errorMessage)
+              files.some((entry) => entry.errorMessage) ||
+              (selectedYoutubeChannels.length > 0 &&
+                youtubeTitle.length === 0) ||
+              (selectedYoutubeChannels.length > 0 && youtubeTitle.length > 100)
             }
             type={"submit"}
           >

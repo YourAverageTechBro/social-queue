@@ -8,20 +8,26 @@ import { errorString } from "@/utils/logging";
 export const maxDuration = 300;
 
 const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
+  const logger = new Logger().with({
+    userId,
+    function: "fetchUserConnectSocialMediaAccounts",
+  });
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("instagram-accounts")
+  const { data: instagramAccounts, error: instagramAccountError } =
+    await supabase.from("instagram-accounts").select("*").eq("user_id", userId);
+  if (instagramAccountError) {
+    logger.error(errorString, instagramAccountError);
+  }
+  const { data: youtubeChannels, error: youtubeChannelError } = await supabase
+    .from("youtube-channels")
     .select("*")
     .eq("user_id", userId);
-  if (error) {
-    const logger = new Logger().with({
-      userId,
-      function: "fetchUserConnectSocialMediaAccounts",
-    });
-    logger.error(errorString, error);
+  if (youtubeChannelError) {
+    logger.error(errorString, youtubeChannelError);
   }
   return {
-    instagramAccounts: data ?? [],
+    instagramAccounts: instagramAccounts ?? [],
+    youtubeChannels: youtubeChannels ?? [],
   };
 };
 
@@ -30,14 +36,14 @@ export default async function PostPage() {
   if (!user) {
     redirect("/login");
   }
-  const { instagramAccounts } = await fetchUserConnectSocialMediaAccounts(
-    user.id
-  );
+  const { instagramAccounts, youtubeChannels } =
+    await fetchUserConnectSocialMediaAccounts(user.id);
 
   return (
     <VideoUploadComponent
       instagramAccounts={instagramAccounts}
       userId={user.id}
+      youtubeChannels={youtubeChannels}
     />
   );
 }

@@ -159,25 +159,25 @@ export type Database = {
       }
       "youtube-channels": {
         Row: {
-          access_token: string
           channel_custom_url: string
           created_at: string
+          credentials: Json
           id: string
           profile_picture_path: string
           user_id: string
         }
         Insert: {
-          access_token: string
           channel_custom_url: string
           created_at?: string
+          credentials: Json
           id: string
           profile_picture_path: string
           user_id: string
         }
         Update: {
-          access_token?: string
           channel_custom_url?: string
           created_at?: string
+          credentials?: Json
           id?: string
           profile_picture_path?: string
           user_id?: string
@@ -185,6 +185,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "youtube-channels_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      "youtube-posts": {
+        Row: {
+          created_at: string
+          id: string
+          parent_social_media_post_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          parent_social_media_post_id: string
+          title: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parent_social_media_post_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube-posts_parent_social_media_post_id_fkey"
+            columns: ["parent_social_media_post_id"]
+            isOneToOne: false
+            referencedRelation: "social-media-posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "youtube-posts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
