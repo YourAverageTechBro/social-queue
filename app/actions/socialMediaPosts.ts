@@ -4,273 +4,13 @@ import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import { FacebookGraphError } from "@/utils/facebookSdk";
-import { postVideoToYoutube } from "./youtube";
 
-const bucketName = process.env.SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
+const bucketName =
+  process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
 
 type PostType = "video" | "image";
 
-export const processSocialMediaPost = async (data: FormData) => {
-  const userId = data.get("userId") as string;
-  const numberOfFiles = parseInt(data.get("numberOfFiles") as string);
-  let files = [];
-  for (let i = 0; i < numberOfFiles; i++) {
-    files.push(data.get(`file${i}`) as File);
-  }
-  const caption = data.get("caption") as string;
-  const youtubeTitle = data.get("youtubeTitle") as string;
-  const instagramBusinessAccountIds = (
-    data.get("instagramBusinessAccountIds") as string | null
-  )?.split(",");
-  const youtubeChannelIds = (
-    data.get("youtubeChannelIds") as string | null
-  )?.split(",");
-  const logger = new Logger().with({
-    function: "processSocialMediaPost",
-    numberOfFiles,
-    userId,
-    caption,
-    instagramBusinessAccountIds,
-  });
-  if (files.length === 1) {
-    logger.info("Uploading single social media post");
-    return await uploadSingleSocialMediaPost({
-      userId,
-      file: files[0],
-      caption,
-      instagramBusinessAccountIds: instagramBusinessAccountIds ?? [],
-      postType: files[0].type.includes("video") ? "video" : "image",
-      youtubeChannelIds: youtubeChannelIds ?? [],
-      youtubeTitle,
-    });
-  } else if (files.length > 1) {
-    logger.info("Uploading social media carousel post");
-    return uploadSocialMediaCarouselPost({
-      userId,
-      files,
-      caption,
-      instagramBusinessAccountIds: instagramBusinessAccountIds ?? [],
-    });
-  } else {
-    logger.error(errorString, { error: "No files found in request" });
-    await logger.flush();
-    return {
-      error: "Sorry, something went wrong. Our team is looking into it.",
-    };
-  }
-};
-
-export const uploadSocialMediaCarouselPost = async ({
-  userId,
-  files,
-  caption,
-  instagramBusinessAccountIds,
-}: {
-  userId: string;
-  files: File[];
-  caption: string;
-  instagramBusinessAccountIds: string[];
-}) => {
-  const logger = new Logger().with({
-    function: "uploadSocialMediaCarouselPost",
-    userId,
-    caption,
-    instagramBusinessAccountIds,
-  });
-  let socialMediaPostId = "";
-  let filePaths: { filePath: string; postType: PostType }[] = [];
-
-  const supabase = createClient();
-
-  try {
-    socialMediaPostId = await createSocialMediaPost(userId);
-    filePaths = await Promise.all(
-      files.map(async (file, index) => {
-        return {
-          filePath: await uploadSocialMediaPostFile({
-            userId,
-            file,
-            index,
-            postId: socialMediaPostId,
-          }),
-          postType: file.type.includes("video") ? "video" : "image",
-        };
-      })
-    );
-    await Promise.all(
-      instagramBusinessAccountIds.map(async (instagramBusinessAccountId) => {
-        const instagramCarouselMediaContainerIds = await Promise.all(
-          filePaths.map(({ filePath, postType }) =>
-            createInstagramContainer({
-              instagramBusinessAccountId,
-              filePath,
-              userId,
-              postType,
-              isCarouselItem: true,
-            })
-          )
-        );
-        await checkInstagramContainerStatus({
-          containerIds: instagramCarouselMediaContainerIds,
-          instagramBusinessAccountId,
-          userId,
-        });
-        const instagramMediaContainerId =
-          await createInstagramCarouselContainer({
-            instagramCarouselMediaContainerIds,
-            instagramBusinessAccountId,
-            userId,
-            caption,
-          });
-        await checkInstagramContainerStatus({
-          containerIds: [instagramMediaContainerId],
-          instagramBusinessAccountId,
-          userId,
-        });
-        const instagramMediaId = await publishInstagramMediaContainer({
-          instagramBusinessAccountId,
-          instagramMediaContainerId,
-          userId,
-        });
-        await saveInstagramId({
-          instagramMediaId,
-          parentSocialMediaPostId: socialMediaPostId,
-          caption,
-          userId,
-        });
-      })
-    );
-    return {
-      data: "Your post has successfully been published to your social media accounts 🎉",
-    };
-  } catch (error) {
-    logger.error(errorString, {
-      error: error instanceof Error ? error.message : JSON.stringify(error),
-    });
-    await logger.flush();
-    if (socialMediaPostId) {
-      await supabase
-        .from("social-media-posts")
-        .delete()
-        .eq("id", socialMediaPostId);
-    }
-    if (filePaths.length > 0) {
-      await Promise.all(
-        filePaths.map(async ({ filePath }) => {
-          await supabase.storage.from(bucketName!).remove([filePath]);
-        })
-      );
-    }
-    return {
-      error:
-        "Sorry, we ran into an error uploading your social media post. Please try again.",
-    };
-  }
-};
-
-export const uploadSingleSocialMediaPost = async ({
-  userId,
-  file,
-  caption,
-  instagramBusinessAccountIds,
-  postType,
-  youtubeChannelIds,
-  youtubeTitle,
-}: {
-  userId: string;
-  file: File;
-  caption?: string;
-  instagramBusinessAccountIds: string[];
-  postType: PostType;
-  youtubeChannelIds: string[];
-  youtubeTitle?: string;
-}) => {
-  const logger = new Logger().with({
-    function: "uploadSingleSocialMediaPost",
-    userId,
-    caption,
-    instagramBusinessAccountIds,
-    postType,
-    youtubeChannelIds,
-  });
-  let socialMediaPostId = "";
-  let filePath = "";
-
-  const supabase = createClient();
-
-  try {
-    socialMediaPostId = await createSocialMediaPost(userId);
-    filePath = await uploadSocialMediaPostFile({
-      userId,
-      file,
-      index: 0,
-      postId: socialMediaPostId,
-    });
-    await Promise.all(
-      instagramBusinessAccountIds.map(async (instagramBusinessAccountId) => {
-        const instagramMediaContainerId = await createInstagramContainer({
-          instagramBusinessAccountId,
-          filePath,
-          caption,
-          userId,
-          postType,
-          isCarouselItem: false,
-        });
-        await checkInstagramContainerStatus({
-          containerIds: [instagramMediaContainerId],
-          instagramBusinessAccountId,
-          userId,
-        });
-        const instagramMediaId = await publishInstagramMediaContainer({
-          instagramBusinessAccountId,
-          instagramMediaContainerId,
-          userId,
-        });
-        await saveInstagramId({
-          instagramMediaId,
-          parentSocialMediaPostId: socialMediaPostId,
-          caption: caption ?? "",
-          userId,
-        });
-      })
-    );
-    await Promise.all(
-      youtubeChannelIds.map(async (youtubeChannelId) => {
-        await postVideoToYoutube({
-          youtubeChannelId,
-          video: file,
-          title: youtubeTitle ?? "",
-          userId,
-          parentSocialMediaPostId: socialMediaPostId,
-          youtubeTitle: youtubeTitle ?? "",
-        });
-      })
-    );
-    return {
-      data: "Your post has successfully been published to your social media accounts 🎉",
-    };
-  } catch (error) {
-    logger.error(errorString, {
-      error: error instanceof Error ? error.message : JSON.stringify(error),
-    });
-    await logger.flush();
-    if (socialMediaPostId) {
-      await supabase
-        .from("social-media-posts")
-        .delete()
-        .eq("id", socialMediaPostId);
-    }
-    if (filePath) {
-      await supabase.storage.from(bucketName!).remove([filePath]);
-    }
-    return {
-      error:
-        "Sorry, we ran into an error uploading your social media post. Please try again.",
-    };
-  }
-};
-
-const createSocialMediaPost = async (userId: string) => {
+export const createSocialMediaPost = async (userId: string) => {
   const logger = new Logger().with({
     function: "createSocialMediaPost",
     userId,
@@ -286,86 +26,25 @@ const createSocialMediaPost = async (userId: string) => {
   if (error) {
     logger.error(errorString, error);
     await logger.flush();
-    throw error;
+    throw new Error(
+      "Sorry, we had an issue creating your post. Please try again."
+    );
   }
   if (!data) {
     logger.error(errorString, {
       error: "No data returned from social-media-posts insert",
     });
     await logger.flush();
-    throw new Error("No data returned from social-media-posts insert");
+    throw new Error(
+      "Sorry, we had an issue creating your post. Please try again."
+    );
   }
   logger.info("Social media post created", { socialMediaPostId: data[0].id });
   await logger.flush();
   return data[0].id;
 };
 
-const uploadSocialMediaPostFile = async ({
-  userId,
-  file,
-  index,
-  postId,
-}: {
-  userId: string;
-  file: File;
-  index: number;
-  postId: string;
-}) => {
-  const logger = new Logger().with({
-    function: "uploadSocialMediaPostFile",
-    userId,
-  });
-
-  const supabase = createClient();
-  if (!bucketName) {
-    logger.error(errorString, {
-      error: "No bucket name found in environment variables",
-    });
-    await logger.flush();
-    throw new Error("No bucket name found in environment variables");
-  }
-
-  const filePath = `${userId}/${postId}/${index}.${
-    file.name.split(".").pop() ?? file.name
-  }`;
-
-  // Upload file
-  const { data: uploadResponse, error: uploadError } = await supabase.storage
-    .from(bucketName)
-    .upload(filePath, file, { upsert: true });
-  if (uploadError) {
-    logger.error(errorString, uploadError);
-    await logger.flush();
-    throw uploadError;
-  }
-  if (!uploadResponse?.path) {
-    logger.error(errorString, {
-      error: "No file path found in response from Supabase",
-    });
-    await logger.flush();
-    throw new Error("No file path found in response from Supabase");
-  }
-
-  const { error: insertError } = await supabase
-    .from("social-media-post-media-files")
-    .insert({
-      media_file_path: uploadResponse.path,
-      parent_social_media_post_id: postId,
-      user_id: userId,
-    });
-
-  if (insertError) {
-    logger.error(errorString, insertError);
-    await logger.flush();
-    throw insertError;
-  }
-
-  logger.info("Social media post file uploaded", { file: file.name });
-  await logger.flush();
-  return uploadResponse.path;
-};
-
-const createInstagramContainer = async ({
+export const createInstagramContainer = async ({
   instagramBusinessAccountId,
   filePath,
   caption,
@@ -480,7 +159,7 @@ const createInstagramContainer = async ({
   return id;
 };
 
-const createInstagramCarouselContainer = async ({
+export const createInstagramCarouselContainer = async ({
   instagramCarouselMediaContainerIds,
   instagramBusinessAccountId,
   userId,
@@ -541,7 +220,7 @@ type StatusCode =
   | "PUBLISHED"
   | null;
 
-const checkInstagramContainerStatus = async ({
+export const checkInstagramContainerStatus = async ({
   containerIds,
   instagramBusinessAccountId,
   userId,
@@ -563,6 +242,8 @@ const checkInstagramContainerStatus = async ({
   });
 
   const checkStatus = async (containerId: string): Promise<StatusCode> => {
+    let numberOfPolls = 0;
+    const maxNumberOfPolls = 15;
     let statusCode: StatusCode = null;
 
     const graphUrl = buildGraphAPIURL({
@@ -606,14 +287,24 @@ const checkInstagramContainerStatus = async ({
         await logger.flush();
         throw new Error("Media container processing expired");
       }
+      if (numberOfPolls > maxNumberOfPolls) {
+        logger.error("Status check timed out", {
+          containerId,
+        });
+        await logger.flush();
+        throw new Error("Status check timed out");
+      }
 
       logger.info("Checked media container status", {
         containerId,
         statusCode,
       });
-      await new Promise((resolve) => setTimeout(resolve, 10000)); // wait for 30 seconds
+      numberOfPolls++;
+      await new Promise((resolve) => setTimeout(resolve, 15000));
     }
 
+    logger.info("Returning status code", { statusCode });
+    await logger.flush();
     return statusCode;
   };
 
@@ -625,7 +316,7 @@ const checkInstagramContainerStatus = async ({
   await logger.flush();
 };
 
-const publishInstagramMediaContainer = async ({
+export const publishInstagramMediaContainer = async ({
   instagramBusinessAccountId,
   instagramMediaContainerId,
   userId,
@@ -717,7 +408,7 @@ const fetchAccessTokenForInstagramBusinessAccountId = async ({
   return data[0].access_token;
 };
 
-const saveInstagramId = async ({
+export const saveInstagramId = async ({
   instagramMediaId,
   parentSocialMediaPostId,
   caption,

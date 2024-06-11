@@ -1,16 +1,18 @@
 type Props = {
   styleOverride?: string;
   spinnerColor?: string;
+  size?: string;
 };
 export default function LoadingSpinner({
   styleOverride,
   spinnerColor = "fill-blue-600 text-gray-200 dark:text-gray-600",
+  size = "h-8 w-8",
 }: Props) {
   return (
     <div className={styleOverride} role="status">
       <svg
         aria-hidden="true"
-        className={`mt-2 h-8 w-8 animate-spin ${spinnerColor}`}
+        className={`${size} animate-spin ${spinnerColor}`}
         viewBox="0 0 100 101"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

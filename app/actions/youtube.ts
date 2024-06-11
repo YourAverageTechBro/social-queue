@@ -1,6 +1,6 @@
 "use server";
 
-import { errorString } from "@/utils/logging";
+import { errorString, startingFunctionString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import youtubeAuthClient from "@/utils/youtube";
 import { randomBytes } from "crypto";
@@ -33,14 +33,12 @@ export const postVideoToYoutube = async ({
   userId,
   parentSocialMediaPostId,
   youtubeChannelId,
-  youtubeTitle,
 }: {
   title: string;
   video: File;
   userId: string;
   parentSocialMediaPostId: string;
   youtubeChannelId: string;
-  youtubeTitle?: string;
 }) => {
   const logger = new Logger().with({
     function: "postVideoToYoutube",
@@ -49,6 +47,7 @@ export const postVideoToYoutube = async ({
     parentSocialMediaPostId,
     youtubeChannelId,
   });
+  logger.info(startingFunctionString);
   const youtubeAccount = await getYoutubeAccountForUser({
     userId,
     youtubeChannelId,
@@ -58,57 +57,46 @@ export const postVideoToYoutube = async ({
   youtubeAuthClient.setCredentials(credentials as Credentials);
   try {
     const youtube = google.youtube("v3");
-    youtube.videos.insert(
-      {
-        auth: youtubeAuthClient,
-        part: ["snippet", "status"],
-        requestBody: {
-          snippet: { title: youtubeTitle ?? "" },
-          status: { privacyStatus: "private" },
-        },
-        media: {
-          body: Readable.from(video.stream() as any),
-          mimeType: "video/mp4",
-        },
+    const resp = await youtube.videos.insert({
+      auth: youtubeAuthClient,
+      part: ["snippet", "status"],
+      requestBody: {
+        snippet: { title },
+        status: { privacyStatus: "private" },
       },
-      async (error, resp) => {
-        if (error) {
-          logger.error(errorString, {
-            error: error instanceof Error ? error.message : String(error),
-            resp,
-          });
-          await logger.flush();
-        } else {
-          const videoId = resp?.data.id;
-          if (!videoId) {
-            logger.error(errorString, {
-              error: "Video id not found",
-            });
-            await logger.flush();
-            return {
-              error:
-                "Sorry, we couldn't upload your video to YouTube. Please try again.",
-            };
-          }
-          logger.info("Video uploaded to youtube", {
-            videoId,
-          });
-          await logger.flush();
-          const supabase = createClient();
-          await supabase.from("youtube-posts").insert({
-            id: videoId,
-            parent_social_media_post_id: parentSocialMediaPostId,
-            title,
-            user_id: userId,
-          });
-        }
-      }
-    );
+      media: {
+        body: Readable.from(video.stream() as any),
+        mimeType: "video/mp4",
+      },
+    });
+    const videoId = resp?.data.id;
+    if (!videoId) {
+      logger.error(errorString, {
+        error: "Video id not found",
+      });
+      await logger.flush();
+      return {
+        error:
+          "Sorry, we couldn't upload your video to YouTube. Please try again.",
+      };
+    }
+    logger.info("Video uploaded to youtube", {
+      videoId,
+    });
+    await logger.flush();
+    const supabase = createClient();
+    await supabase.from("youtube-posts").insert({
+      id: videoId,
+      parent_social_media_post_id: parentSocialMediaPostId,
+      title,
+      user_id: userId,
+    });
   } catch (error) {
     logger.error(errorString, {
       error: error instanceof Error ? error.message : String(error),
     });
     await logger.flush();
+    throw error;
   }
 };
 
