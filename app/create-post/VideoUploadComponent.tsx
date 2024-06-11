@@ -15,15 +15,19 @@ import {
   createInstagramCarouselContainer,
   createInstagramContainer,
   createSocialMediaPost,
-  processSocialMediaPost,
   publishInstagramMediaContainer,
   saveInstagramId,
-  uploadSocialMediaPostFile,
 } from "@/app/actions/socialMediaPosts";
 import Icons from "@/components/common/Icons";
 import TextInput from "@/components/common/TextInput";
 import { postVideoToYoutube } from "../actions/youtube";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { useLogger } from "next-axiom";
+import { errorString } from "@/utils/logging";
+import { createClient } from "@/utils/supabase/client";
+
+const bucketName =
+  process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
 
 const MemoizedMedia = memo(
   function Media({ file, onRemove }: { file: File; onRemove: () => void }) {
@@ -86,8 +90,8 @@ export default function VideoUploadComponent({
   }>({});
   const [youtubeTitle, setYoutubeTitle] = useState<string>("");
   const [caption, setCaption] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [successString, setSuccessString] = useState<string>("");
+  let logger = useLogger();
+  const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -120,11 +124,15 @@ export default function VideoUploadComponent({
             window.URL.revokeObjectURL(video.src);
             const duration = video.duration;
             if (duration < 3 || duration > 15 * 60) {
-              setError(
-                "File error: Video duration must be between 3 seconds and 15 minutes."
-              );
+              setFiles((prev) => [
+                ...prev,
+                {
+                  file: selectedFile,
+                  errorMessage:
+                    "File error: Video duration must be between 3 seconds and 15 minutes.",
+                },
+              ]);
             } else {
-              setError("");
               setFiles((prev) => [
                 ...prev,
                 { file: selectedFile, errorMessage: "" },
@@ -155,28 +163,84 @@ export default function VideoUploadComponent({
   };
 
   const handleCustomButtonClick = () => {
-    // Trigger the hidden file input when the custom button is clicked
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  const processSocialMediaPost = (data: FormData) => {
-    createSocialMediaPost(userId)
-      .then(async (socialMediaPostId) => {
-        if (files.length === 1) {
-          processSingleSocialMediaPost({ socialMediaPostId });
-        } else if (files.length > 1) {
-          processCarouselSocialMediaPost({ socialMediaPostId });
-        }
-      })
-      .catch((err) =>
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Sorry, something went wrong. The team is looking into it."
-        )
+  const processSocialMediaPost = () => {
+    createSocialMediaPost(userId).then(async (socialMediaPostId) => {
+      if (files.length === 1) {
+        processSingleSocialMediaPost({ socialMediaPostId });
+      } else if (files.length > 1) {
+        processCarouselSocialMediaPost({ socialMediaPostId });
+      }
+    });
+  };
+
+  const uploadSocialMediaPostFile = async ({
+    userId,
+    file,
+    index,
+    postId,
+  }: {
+    userId: string;
+    file: File;
+    index: number;
+    postId: string;
+  }) => {
+    logger = logger.with({
+      function: "uploadSocialMediaPostFile",
+      userId,
+    });
+
+    if (!bucketName) {
+      logger.error(errorString, {
+        error: "No bucket name found in environment variables",
+      });
+      await logger.flush();
+      throw Error("Sorry, something went wrong. The team is looking into it.");
+    }
+
+    const filePath = `${userId}/${postId}/${index}.${
+      file.name.split(".").pop() ?? file.name
+    }`;
+
+    // Upload file
+    const { data: uploadResponse, error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, file, { upsert: true });
+    if (uploadError) {
+      logger.error(errorString, uploadError);
+      throw Error(
+        "Sorry, we had an issue uploading your file. Please try again."
       );
+    }
+    if (!uploadResponse?.path) {
+      logger.error(errorString, {
+        error: "No file path found in response from Supabase",
+      });
+      throw new Error("No file path found in response from Supabase");
+    }
+
+    const { error: insertError } = await supabase
+      .from("social-media-post-media-files")
+      .insert({
+        media_file_path: uploadResponse.path,
+        parent_social_media_post_id: postId,
+        user_id: userId,
+      });
+
+    if (insertError) {
+      logger.error(errorString, insertError);
+      await logger.flush();
+      throw Error(
+        "Sorry, we had an issue uploading your file. Please try again."
+      );
+    }
+
+    logger.info("Social media post file uploaded", { file: file.name });
+    return uploadResponse.path;
   };
 
   const processCarouselSocialMediaPost = async ({
@@ -198,10 +262,13 @@ export default function VideoUploadComponent({
       })
     );
     selectedInstagramAccounts.forEach(async (account) => {
+      setInstagramAccountIdToProcessingState({
+        [account.instagram_business_account_id]: "processing",
+      });
       Promise.all(
         filePaths.map(({ filePath, postType }) =>
           createInstagramContainer({
-            instagramBusinessAccountId: account.id,
+            instagramBusinessAccountId: account.instagram_business_account_id,
             filePath,
             userId,
             postType: postType.includes("video") ? "video" : "image",
@@ -212,22 +279,24 @@ export default function VideoUploadComponent({
         .then((instagramCarouselMediaContainerIds) =>
           checkInstagramContainerStatus({
             containerIds: instagramCarouselMediaContainerIds,
-            instagramBusinessAccountId: account.id,
+            instagramBusinessAccountId: account.instagram_business_account_id,
             userId,
           }).then(() =>
             createInstagramCarouselContainer({
               instagramCarouselMediaContainerIds,
-              instagramBusinessAccountId: account.id,
+              instagramBusinessAccountId: account.instagram_business_account_id,
               userId,
               caption,
             }).then((instagramMediaContainerId) =>
               checkInstagramContainerStatus({
                 containerIds: [instagramMediaContainerId],
-                instagramBusinessAccountId: account.id,
+                instagramBusinessAccountId:
+                  account.instagram_business_account_id,
                 userId,
               }).then(() =>
                 publishInstagramMediaContainer({
-                  instagramBusinessAccountId: account.id,
+                  instagramBusinessAccountId:
+                    account.instagram_business_account_id,
                   instagramMediaContainerId,
                   userId,
                 }).then((instagramMediaId) => {
@@ -238,7 +307,7 @@ export default function VideoUploadComponent({
                     userId,
                   });
                   setInstagramAccountIdToProcessingState({
-                    [account.id]: "posted",
+                    [account.instagram_business_account_id]: "posted",
                   });
                 })
               )
@@ -247,7 +316,7 @@ export default function VideoUploadComponent({
         )
         .catch((err) => {
           setInstagramAccountIdToProcessingState({
-            [account.id]: "error",
+            [account.instagram_business_account_id]: "error",
           });
         });
     });
@@ -267,10 +336,10 @@ export default function VideoUploadComponent({
     });
     selectedInstagramAccounts.forEach((account) => {
       setInstagramAccountIdToProcessingState({
-        [account.id]: "processing",
+        [account.instagram_business_account_id]: "processing",
       });
       createInstagramContainer({
-        instagramBusinessAccountId: account.id,
+        instagramBusinessAccountId: account.instagram_business_account_id,
         filePath,
         caption,
         userId,
@@ -280,12 +349,12 @@ export default function VideoUploadComponent({
         .then((containerId) =>
           checkInstagramContainerStatus({
             containerIds: [containerId],
-            instagramBusinessAccountId: account.id,
+            instagramBusinessAccountId: account.instagram_business_account_id,
             userId,
           }).then(() => {
             publishInstagramMediaContainer({
               instagramMediaContainerId: containerId,
-              instagramBusinessAccountId: account.id,
+              instagramBusinessAccountId: account.instagram_business_account_id,
               userId,
             }).then((instagramMediaId) => {
               saveInstagramId({
@@ -295,14 +364,14 @@ export default function VideoUploadComponent({
                 userId,
               });
               setInstagramAccountIdToProcessingState({
-                [account.id]: "posted",
+                [account.instagram_business_account_id]: "posted",
               });
             });
           })
         )
         .catch(() => {
           setInstagramAccountIdToProcessingState({
-            [account.id]: "error",
+            [account.instagram_business_account_id]: "error",
           });
         });
     });
@@ -310,24 +379,26 @@ export default function VideoUploadComponent({
       setYoutubeChannelIdToProcessingState({
         [channel.id]: "processing",
       });
-      postVideoToYoutube({
-        youtubeChannelId: channel.id,
-        video: file,
-        title: youtubeTitle ?? "",
-        userId,
-        parentSocialMediaPostId: socialMediaPostId,
-        youtubeTitle: youtubeTitle ?? "",
-      })
-        .then(() => {
+      const formData = new FormData();
+      formData.append("youtubeChannelId", channel.id);
+      formData.append("video", file);
+      formData.append("title", youtubeTitle);
+      formData.append("userId", userId);
+      formData.append("parentSocialMediaPostId", socialMediaPostId);
+      fetch("/api/youtube/post", {
+        method: "POST",
+        body: formData,
+      }).then((resp) => {
+        if (resp.ok) {
           setYoutubeChannelIdToProcessingState({
             [channel.id]: "posted",
           });
-        })
-        .catch(() => {
+        } else {
           setYoutubeChannelIdToProcessingState({
             [channel.id]: "error",
           });
-        });
+        }
+      });
     });
   };
 
@@ -371,18 +442,26 @@ export default function VideoUploadComponent({
             <button
               className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2 ${
                 selectedInstagramAccounts.find(
-                  (acc) => acc.id === account.id
+                  (acc) =>
+                    acc.instagram_business_account_id ===
+                    account.instagram_business_account_id
                 ) && "border-2 border-orange-500"
               }`}
               onClick={() =>
                 setSelectedInstagramAccounts((prev) => {
-                  if (prev.find((acc) => acc.id === account.id)) {
-                    return prev.filter((acc) => acc.id !== account.id);
+                  if (
+                    prev.find(
+                      (acc) => acc.id === account.instagram_business_account_id
+                    )
+                  ) {
+                    return prev.filter(
+                      (acc) => acc.id !== account.instagram_business_account_id
+                    );
                   }
                   return [...prev, account];
                 })
               }
-              key={account.id}
+              key={account.instagram_business_account_id}
             >
               <div className="flex items-center gap-2">
                 <div className="relative w-8 h-8">
@@ -399,27 +478,39 @@ export default function VideoUploadComponent({
                 <p
                   className={`
                   ${
-                    instagramAccountIdToProcessingState[account.id] ===
-                      "posted" && "text-green-400"
+                    instagramAccountIdToProcessingState[
+                      account.instagram_business_account_id
+                    ] === "posted" && "text-green-400"
                   }
                   ${
-                    instagramAccountIdToProcessingState[account.id] ===
-                      "error" && "text-red-400"
+                    instagramAccountIdToProcessingState[
+                      account.instagram_business_account_id
+                    ] === "error" && "text-red-400"
                   }
                   ${
-                    instagramAccountIdToProcessingState[account.id] ===
-                      "processing" && "text-orange-400"
+                    instagramAccountIdToProcessingState[
+                      account.instagram_business_account_id
+                    ] === "processing" && "text-orange-400"
                   }
                 `}
                 >
-                  {instagramAccountIdToProcessingState[account.id]}
+                  {
+                    instagramAccountIdToProcessingState[
+                      account.instagram_business_account_id
+                    ]
+                  }
                 </p>
-                {instagramAccountIdToProcessingState[account.id] ===
-                  "processing" && <LoadingSpinner size="h-6 w-6" />}
-                {instagramAccountIdToProcessingState[account.id] ===
-                  "error" && <XCircleIcon className="h-6 w-6 text-red-400" />}
-                {instagramAccountIdToProcessingState[account.id] ===
-                  "posted" && (
+                {instagramAccountIdToProcessingState[
+                  account.instagram_business_account_id
+                ] === "processing" && <LoadingSpinner size="h-6 w-6" />}
+                {instagramAccountIdToProcessingState[
+                  account.instagram_business_account_id
+                ] === "error" && (
+                  <XCircleIcon className="h-6 w-6 text-red-400" />
+                )}
+                {instagramAccountIdToProcessingState[
+                  account.instagram_business_account_id
+                ] === "posted" && (
                   <CheckCircleIcon className="h-6 w-6 text-green-400" />
                 )}
               </div>
@@ -484,9 +575,7 @@ export default function VideoUploadComponent({
           ))}
         </div>
         <form
-          action={(data) => {
-            processSocialMediaPost(data);
-          }}
+          action={processSocialMediaPost}
           className={"flex flex-col justify-center"}
         >
           <input type={"hidden"} name={"userId"} value={userId} />
@@ -508,6 +597,8 @@ export default function VideoUploadComponent({
               placeholder={
                 "Check out thecontentmarketingblueprint.com for help with social media marketing!"
               }
+              value={caption}
+              setValue={setCaption}
             />
           )}
           {selectedYoutubeChannels.length > 0 && (
@@ -528,7 +619,6 @@ export default function VideoUploadComponent({
             disabled={
               (selectedInstagramAccounts.length === 0 &&
                 selectedYoutubeChannels.length === 0) ||
-              error.length > 0 ||
               files.length === 0 ||
               files.some((entry) => entry.errorMessage) ||
               (selectedYoutubeChannels.length > 0 &&
@@ -547,25 +637,6 @@ export default function VideoUploadComponent({
             Upload Post
           </Button>
         </form>
-        {error && (
-          <div
-            className={
-              "bg-red-500 rounded-lg p-4 flex items-center gap-2 w-full"
-            }
-          >
-            <XCircleIcon className={"h-6 w-6"} />
-            <p className={""}>{error} </p>
-          </div>
-        )}
-
-        {successString && (
-          <div
-            className={"bg-green-500 rounded-lg p-4 flex items-center gap-2"}
-          >
-            <CheckCircleIcon className={"h-6 w-6"} />
-            <p className={""}>{successString} </p>
-          </div>
-        )}
       </div>
     </div>
   );
