@@ -1,4 +1,4 @@
-import { postVideoToYoutube } from "@/app/actions/youtube";
+import { postVideoToYoutube, YoutubeVideoStatus } from "@/app/actions/youtube";
 import { AxiomRequest, withAxiom } from "next-axiom";
 import { NextResponse } from "next/server";
 
@@ -9,6 +9,7 @@ export const POST = withAxiom(async (req: AxiomRequest) => {
     const title = body.get("title") as string;
     const video = body.get("video") as File;
     const youtubeChannelId = body.get("youtubeChannelId") as string;
+    const status = body.get("status") as string as YoutubeVideoStatus;
     const parentSocialMediaPostId = body.get(
       "parentSocialMediaPostId"
     ) as string;
@@ -19,6 +20,7 @@ export const POST = withAxiom(async (req: AxiomRequest) => {
       video,
       youtubeChannelId,
       parentSocialMediaPostId,
+      status,
     });
     return NextResponse.json({ message: "success" });
   } catch (error) {

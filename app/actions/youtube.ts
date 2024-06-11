@@ -8,7 +8,9 @@ import { Credentials } from "google-auth-library";
 import { google } from "googleapis";
 import { Logger } from "next-axiom/dist/logger";
 import { redirect } from "next/navigation";
-import { once, PassThrough, Readable } from "node:stream";
+import { Readable } from "node:stream";
+
+export type YoutubeVideoStatus = "private" | "public";
 
 export const connectYoutubeAccount = async () => {
   const scopes = [
@@ -33,12 +35,14 @@ export const postVideoToYoutube = async ({
   userId,
   parentSocialMediaPostId,
   youtubeChannelId,
+  status,
 }: {
   title: string;
   video: File;
   userId: string;
   parentSocialMediaPostId: string;
   youtubeChannelId: string;
+  status: YoutubeVideoStatus;
 }) => {
   const logger = new Logger().with({
     function: "postVideoToYoutube",
@@ -62,7 +66,7 @@ export const postVideoToYoutube = async ({
       part: ["snippet", "status"],
       requestBody: {
         snippet: { title },
-        status: { privacyStatus: "private" },
+        status: { privacyStatus: status },
       },
       media: {
         body: Readable.from(video.stream() as any),
