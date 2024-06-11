@@ -7,6 +7,7 @@ import { randomBytes } from "crypto";
 import { Credentials } from "google-auth-library";
 import { google } from "googleapis";
 import { Logger } from "next-axiom/dist/logger";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Readable } from "node:stream";
 
@@ -124,4 +125,59 @@ const getYoutubeAccountForUser = async ({
     throw new Error("Youtube account not found");
   }
   return data[0];
+};
+
+export const deleteYoutubeChannel = async (prevState: any, data: FormData) => {
+  const userId = data.get("userId") as string;
+  const youtubeChannelId = data.get("youtubeChannelId") as string;
+  const logger = new Logger().with({
+    userId,
+    youtubeChannelId,
+  });
+  const supabase = createClient();
+  try {
+    const { error } = await supabase
+      .from("youtube-channels")
+      .delete()
+      .eq("user_id", userId)
+      .eq("id", youtubeChannelId);
+    if (error) {
+      logger.error(errorString, error);
+      await logger.flush();
+      return {
+        error:
+          "Sorry, we ran into an error deleting your Instagram account. Please try again.",
+      };
+    }
+
+    const { error: storageError } = await supabase.storage
+      .from(
+        process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET!
+      )
+      .remove([`${userId}/youtubeChannel/${youtubeChannelId}`]);
+    if (storageError) {
+      logger.error(errorString, storageError);
+      await logger.flush();
+      return {
+        error:
+          "Sorry, we ran into an error deleting your Instagram account. Please try again.",
+      };
+    }
+  } catch (error) {
+    logger.error(errorString, {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    });
+    await logger.flush();
+    return {
+      error:
+        "Sorry, we ran into an error deleting your Instagram account. Please try again.",
+    };
+  } finally {
+    await logger.flush();
+  }
+  revalidatePath("/accounts");
+  return {
+    data: "Successfully deleted YouTube channel",
+    error: null,
+  };
 };

@@ -79,6 +79,65 @@ export const saveInstagramAccount = async (prevState: any, data: FormData) => {
   };
 };
 
+export const deleteInstagramAccount = async (
+  prevState: any,
+  data: FormData
+) => {
+  const instagramBusinessAccountId = data.get(
+    "instagramBusinessAccountId"
+  ) as string;
+  const userId = data.get("userId") as string;
+  const logger = new Logger().with({
+    instagramBusinessAccountId,
+    userId,
+  });
+  const supabase = createClient();
+  try {
+    const { error } = await supabase
+      .from("instagram-accounts")
+      .delete()
+      .eq("instagram_business_account_id", instagramBusinessAccountId);
+    if (error) {
+      logger.error(errorString, error);
+      await logger.flush();
+      return {
+        error:
+          "Sorry, we ran into an error deleting your Instagram account. Please try again.",
+      };
+    }
+
+    const { error: storageError } = await supabase.storage
+      .from(
+        process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET!
+      )
+      .remove([`${userId}/instagramAccount/${instagramBusinessAccountId}`]);
+    if (storageError) {
+      logger.error(errorString, storageError);
+      await logger.flush();
+      return {
+        error:
+          "Sorry, we ran into an error deleting your Instagram account. Please try again.",
+      };
+    }
+  } catch (error) {
+    await logger.flush();
+    logger.error(errorString, {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    });
+    return {
+      error:
+        "Sorry, we ran into an error deleting your Instagram account. Please try again.",
+    };
+  } finally {
+    await logger.flush();
+  }
+  revalidatePath("/accounts");
+  return {
+    data: "Successfully deleted Instagram account",
+    error: null,
+  };
+};
+
 const uploadInstagramProfilePicture = async ({
   userId,
   instagramBusinessAccountId,
