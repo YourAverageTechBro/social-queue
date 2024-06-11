@@ -17,7 +17,7 @@ export type Database = {
           facebook_page_id: string
           id: string
           instagram_business_account_id: string
-          picture_url: string
+          picture_file_path: string
           user_id: string
         }
         Insert: {
@@ -27,7 +27,7 @@ export type Database = {
           facebook_page_id: string
           id?: string
           instagram_business_account_id: string
-          picture_url: string
+          picture_file_path: string
           user_id: string
         }
         Update: {
@@ -37,7 +37,7 @@ export type Database = {
           facebook_page_id?: string
           id?: string
           instagram_business_account_id?: string
-          picture_url?: string
+          picture_file_path?: string
           user_id?: string
         }
         Relationships: [

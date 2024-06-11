@@ -1,4 +1,5 @@
 import { Button } from "@/components/common/Button";
+import Icons from "@/components/common/Icons";
 import {
   getInstagramAccountId,
   InstagramAccount,
@@ -25,15 +26,17 @@ export default function ConnectFacebookAccountButton({
     }
   };
   return (
-    <Button
+    <button
       onClick={() => {
         loginToFacebook(facebookLoginCallback, {
           scope:
             "instagram_basic,instagram_content_publish,pages_read_engagement",
         });
       }}
+      className="p-2 rounded-full flex items-center gap-2 bg-gradient-to-r from-purple-400 via-pink-500 to-orange-400 text-white"
     >
-      Connect Facebook
-    </Button>
+      <Icons.instagram className="h-6 w-6 inline-block" />
+      <p className="font-bold text-gray-100"> Connect Instagram Account</p>
+    </button>
   );
 }

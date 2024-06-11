@@ -474,7 +474,7 @@ export default function VideoUploadComponent({
               <div className="flex items-center gap-2">
                 <div className="relative w-8 h-8">
                   <img
-                    src={account.picture_url}
+                    src={account.picture_file_path}
                     alt={account.account_name}
                     className="w-8 h-8 rounded-full"
                   />
