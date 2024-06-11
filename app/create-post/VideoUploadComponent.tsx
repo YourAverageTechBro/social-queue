@@ -20,11 +20,12 @@ import {
 } from "@/app/actions/socialMediaPosts";
 import Icons from "@/components/common/Icons";
 import TextInput from "@/components/common/TextInput";
-import { postVideoToYoutube } from "../actions/youtube";
+import { postVideoToYoutube, YoutubeVideoStatus } from "../actions/youtube";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useLogger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/client";
+import RadioGroups from "@/components/common/RadioGroup";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -89,6 +90,8 @@ export default function VideoUploadComponent({
     [key: string]: ProcessingState;
   }>({});
   const [youtubeTitle, setYoutubeTitle] = useState<string>("");
+  const [youtubeVideoStatus, setYoutubeVideoStatus] =
+    useState<YoutubeVideoStatus>("public");
   const [caption, setCaption] = useState<string>("");
   let logger = useLogger();
   const supabase = createClient();
@@ -385,6 +388,7 @@ export default function VideoUploadComponent({
       formData.append("title", youtubeTitle);
       formData.append("userId", userId);
       formData.append("parentSocialMediaPostId", socialMediaPostId);
+      formData.append("status", youtubeVideoStatus);
       fetch("/api/youtube/post", {
         method: "POST",
         body: formData,
@@ -451,11 +455,15 @@ export default function VideoUploadComponent({
                 setSelectedInstagramAccounts((prev) => {
                   if (
                     prev.find(
-                      (acc) => acc.id === account.instagram_business_account_id
+                      (acc) =>
+                        acc.instagram_business_account_id ===
+                        account.instagram_business_account_id
                     )
                   ) {
                     return prev.filter(
-                      (acc) => acc.id !== account.instagram_business_account_id
+                      (acc) =>
+                        acc.instagram_business_account_id !==
+                        account.instagram_business_account_id
                     );
                   }
                   return [...prev, account];
@@ -602,18 +610,29 @@ export default function VideoUploadComponent({
             />
           )}
           {selectedYoutubeChannels.length > 0 && (
-            <TextInput
-              name={"youtubeTitle"}
-              title={"Youtube Title"}
-              placeholder={
-                "Check out thecontentmarketingblueprint.com for help with social media marketing!"
-              }
-              required={true}
-              maxLength={100}
-              type={"text"}
-              value={youtubeTitle}
-              setValue={setYoutubeTitle}
-            />
+            <>
+              <TextInput
+                name={"youtubeTitle"}
+                title={"Youtube Title"}
+                placeholder={
+                  "Check out thecontentmarketingblueprint.com for help with social media marketing!"
+                }
+                required={true}
+                maxLength={100}
+                type={"text"}
+                value={youtubeTitle}
+                setValue={setYoutubeTitle}
+              />
+              <RadioGroups
+                title={"Youtube Video Status"}
+                options={[
+                  { value: "public", title: "Public" },
+                  { value: "private", title: "Private" },
+                ]}
+                value={youtubeVideoStatus}
+                setValue={setYoutubeVideoStatus}
+              />
+            </>
           )}
           <Button
             disabled={
