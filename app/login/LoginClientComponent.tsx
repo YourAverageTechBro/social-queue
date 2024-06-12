@@ -8,8 +8,9 @@ export default function LoginClientComponent() {
   const supabase = createClient();
   return (
     <Auth
-      redirectTo={`${location.origin}/auth/callback`}
       supabaseClient={supabase}
+      providers={["google"]}
+      redirectTo={`${location.origin}/auth/callback`}
       appearance={{
         theme: ThemeSupa,
         variables: {
