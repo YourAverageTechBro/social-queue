@@ -7,6 +7,7 @@ import { AnimatedBeam } from "@/components/common/AnimatedBeam";
 import { Button } from "@/components/common/Button";
 import Text from "@/components/common/Text";
 import Icons from "@/components/common/Icons";
+import Footer from "@/components/common/Footer";
 
 export default function SocialQueue() {
   return (
@@ -29,6 +30,7 @@ export default function SocialQueue() {
         </div>
         <AnimatedBeamMultipleOutputDemo />
       </div>
+      <Footer />
     </div>
   );
 }

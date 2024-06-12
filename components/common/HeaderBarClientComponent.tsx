@@ -19,7 +19,7 @@ export default function HeaderBarClientComponent({
   let navigation = [
     {
       name: "Pricing",
-      href: "/purchase",
+      href: "/pricing",
     },
   ];
 
