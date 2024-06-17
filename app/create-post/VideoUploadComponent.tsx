@@ -57,8 +57,6 @@ const MemoizedMedia = memo(
   (prevProps, nextProps) => prevProps.file === nextProps.file
 );
 
-type ProcessingState = "processing" | "posted" | "error";
-
 export default function VideoUploadComponent({
   instagramAccounts,
   youtubeChannels,
@@ -81,13 +79,13 @@ export default function VideoUploadComponent({
     instagramAccountIdToProcessingState,
     setInstagramAccountIdToProcessingState,
   ] = useState<{
-    [key: string]: ProcessingState;
+    [key: string]: string;
   }>({});
   const [
     youtubeChannelIdToProcessingState,
     setYoutubeChannelIdToProcessingState,
   ] = useState<{
-    [key: string]: ProcessingState;
+    [key: string]: string;
   }>({});
   const [youtubeTitle, setYoutubeTitle] = useState<string>("");
   const [youtubeVideoStatus, setYoutubeVideoStatus] =
@@ -372,9 +370,10 @@ export default function VideoUploadComponent({
             });
           })
         )
-        .catch(() => {
+        .catch((error) => {
           setInstagramAccountIdToProcessingState({
-            [account.instagram_business_account_id]: "error",
+            [account.instagram_business_account_id]:
+              error instanceof Error ? error.message : "Unknown error",
           });
         });
     });
@@ -493,7 +492,7 @@ export default function VideoUploadComponent({
                   ${
                     instagramAccountIdToProcessingState[
                       account.instagram_business_account_id
-                    ] === "error" && "text-red-400"
+                    ].includes("error") && "text-red-400"
                   }
                   ${
                     instagramAccountIdToProcessingState[
@@ -513,7 +512,7 @@ export default function VideoUploadComponent({
                 ] === "processing" && <LoadingSpinner size="h-6 w-6" />}
                 {instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
-                ] === "error" && (
+                ].includes("error") && (
                   <XCircleIcon className="h-6 w-6 text-red-400" />
                 )}
                 {instagramAccountIdToProcessingState[
@@ -559,8 +558,9 @@ export default function VideoUploadComponent({
                       "posted" && "text-green-400"
                   }
                   ${
-                    youtubeChannelIdToProcessingState[channel.id] === "error" &&
-                    "text-red-400"
+                    youtubeChannelIdToProcessingState[channel.id].includes(
+                      "error"
+                    ) && "text-red-400"
                   }
                   ${
                     youtubeChannelIdToProcessingState[channel.id] ===
@@ -572,9 +572,9 @@ export default function VideoUploadComponent({
                 </p>
                 {youtubeChannelIdToProcessingState[channel.id] ===
                   "processing" && <LoadingSpinner size="h-6 w-6" />}
-                {youtubeChannelIdToProcessingState[channel.id] === "error" && (
-                  <XCircleIcon className="h-6 w-6 text-red-400" />
-                )}
+                {youtubeChannelIdToProcessingState[channel.id].includes(
+                  "error"
+                ) && <XCircleIcon className="h-6 w-6 text-red-400" />}
                 {youtubeChannelIdToProcessingState[channel.id] === "posted" && (
                   <CheckCircleIcon className="h-6 w-6 text-green-400" />
                 )}
