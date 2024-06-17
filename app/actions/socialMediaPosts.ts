@@ -153,7 +153,7 @@ export const createInstagramContainer = async ({
   if (facebookGraphError) {
     logger.error(errorString, facebookGraphError);
     await logger.flush();
-    throw new Error("Failed creating media container");
+    throw new Error(`Error: ${facebookGraphError.message}`);
   }
   await logger.flush();
   return id;
