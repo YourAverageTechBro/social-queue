@@ -18,8 +18,8 @@ export default function HeaderBarClientComponent({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   let navigation = [
     {
-      name: "Pricing",
-      href: "/pricing",
+      name: "Create Post",
+      href: "/create-post",
     },
   ];
 
