@@ -287,7 +287,10 @@ export default function Dashboard({
           youtubeChannelToDelete
         )}
         <div className="flex items-center justify-center gap-2">
-          <Button onClick={() => setOpenConfirmDeleteModal(false)}>
+          <Button
+            intent="secondary"
+            onClick={() => setOpenConfirmDeleteModal(false)}
+          >
             Cancel
           </Button>
           {instagramAccountToDelete && (
@@ -298,7 +301,9 @@ export default function Dashboard({
                 value={instagramAccountToDelete.instagram_business_account_id}
               />
               <input type={"hidden"} name={"userId"} value={userId} />
-              <Button type={"submit"}>Delete</Button>
+              <Button intent="danger" type={"submit"}>
+                Delete
+              </Button>
             </form>
           )}
           {youtubeChannelToDelete && (
