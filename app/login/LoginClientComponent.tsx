@@ -3,9 +3,25 @@
 import { Auth } from "@supabase/auth-ui-react";
 import { createClient } from "@/utils/supabase/client";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function LoginClientComponent() {
   const supabase = createClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        router.refresh();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  });
+
   return (
     <Auth
       supabaseClient={supabase}
