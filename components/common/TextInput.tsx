@@ -1,3 +1,4 @@
+import { createClient } from "@/utils/supabase/client";
 import { useState } from "react";
 
 export default function TextInput({
@@ -5,7 +6,6 @@ export default function TextInput({
   type,
   placeholder,
   required = false,
-  defaultValue,
   maxLength,
   title,
   value,
@@ -15,7 +15,6 @@ export default function TextInput({
   type: string;
   placeholder?: string;
   required?: boolean;
-  defaultValue?: string;
   maxLength?: number;
   title?: string;
   value?: string;
@@ -38,8 +37,8 @@ export default function TextInput({
       {title && <div className="text-sm font-bold">{title}</div>}
       <input
         className={
-          "rounded-lg p-2 text-lg text-black w-full border-2 " +
-          (error ? "border-red-500" : "border-gray-500")
+          "rounded-lg p-2 text-lg w-full border-2 bg-gray-800 text-white " +
+          (error ? "border-red-500" : "border-gray-700")
         }
         name={name}
         type={type}

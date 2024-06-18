@@ -8,6 +8,8 @@ import {
   startingFunctionString,
 } from "@/utils/logging";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 export const getUser = async () => {
   const supabase = createClient();
@@ -30,4 +32,28 @@ export const signOut = async (_: FormData) => {
   }
   logger.info(endingFunctionString);
   return redirect("/");
+};
+
+export const signInWithMagicLink = async (prevState: any, data: FormData) => {
+  const supabase = createClient();
+  const email = data.get("email") as string;
+  const logger = new Logger().with({ function: "signInWithMagicLink", email });
+  logger.info(startingFunctionString);
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${headers().get("origin")}/auth/otp/callback`,
+    },
+  });
+  if (error) {
+    logger.error(errorString, error);
+    await logger.flush();
+    return { error: error.message };
+  }
+  logger.info(endingFunctionString);
+  revalidatePath("/", "layout");
+  return {
+    data: "Sign in email sent",
+    error: null,
+  };
 };
