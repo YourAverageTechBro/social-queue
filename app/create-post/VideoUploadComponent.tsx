@@ -492,7 +492,7 @@ export default function VideoUploadComponent({
                   ${
                     instagramAccountIdToProcessingState[
                       account.instagram_business_account_id
-                    ].includes("error") && "text-red-400"
+                    ]?.includes("error") && "text-red-400"
                   }
                   ${
                     instagramAccountIdToProcessingState[
@@ -512,7 +512,7 @@ export default function VideoUploadComponent({
                 ] === "processing" && <LoadingSpinner size="h-6 w-6" />}
                 {instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
-                ].includes("error") && (
+                ]?.includes("error") && (
                   <XCircleIcon className="h-6 w-6 text-red-400" />
                 )}
                 {instagramAccountIdToProcessingState[
