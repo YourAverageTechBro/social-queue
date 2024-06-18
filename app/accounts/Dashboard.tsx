@@ -55,7 +55,6 @@ export default function Dashboard({
     if (state.error) {
       toast.error(state.error);
     } else if (state.data) {
-      toast.success(state.data.message);
       if (state.data.instagramBusinessAccountId) {
         setNewInstagramAccounts((prevAccounts) =>
           prevAccounts.filter(
