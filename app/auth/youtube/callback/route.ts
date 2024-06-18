@@ -26,94 +26,92 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
       let { tokens } = await youtubeAuthClient.getToken(code);
       youtubeAuthClient.setCredentials(tokens);
       var service = google.youtube("v3");
-      service.channels.list(
-        {
+      try {
+        const response = await service.channels.list({
           auth: youtubeAuthClient,
           part: ["snippet", "contentDetails", "statistics"],
           mine: true,
-        },
-        async (err, response) => {
-          if (err) {
-            logger.error(errorString, {
-              error: err instanceof Error ? err.message : String(err),
-            });
+        });
 
+        var channels = response?.data.items;
+        if (!channels) {
+          logger.error(errorString, {
+            error: "No response from YouTube API",
+          });
+          return NextResponse.redirect(
+            `${origin}/accounts?error=No response from YouTube API`
+          );
+        }
+        if (channels.length == 0) {
+          logger.error(errorString, { error: "No channel found." });
+        } else {
+          logger.info("Fetched channel", channels[0]);
+
+          const snippet = channels[0].snippet;
+          if (!snippet) {
+            logger.error(errorString, { error: "No snippet found." });
             return NextResponse.redirect(
-              `${origin}/accounts?error=${
-                err instanceof Error ? err.message : String(err)
-              }`
+              `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
             );
           }
-          var channels = response?.data.items;
-          if (!channels) {
+          const customUrl = snippet.customUrl;
+          const thumbnail = snippet.thumbnails?.default?.url;
+          const accessToken = tokens.access_token;
+          const channelId = channels[0].id;
+
+          if (!customUrl || !thumbnail || !accessToken || !channelId) {
             logger.error(errorString, {
-              error: "No response from YouTube API",
-            });
-            return NextResponse.redirect(
-              `${origin}/accounts?error=No response from YouTube API`
-            );
-          }
-          if (channels.length == 0) {
-            logger.error(errorString, { error: "No channel found." });
-          } else {
-            logger.info("Fetched channel", channels[0]);
-
-            const snippet = channels[0].snippet;
-            if (!snippet) {
-              logger.error(errorString, { error: "No snippet found." });
-              return NextResponse.redirect(
-                `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
-              );
-            }
-            const customUrl = snippet.customUrl;
-            const thumbnail = snippet.thumbnails?.default?.url;
-            const accessToken = tokens.access_token;
-            const channelId = channels[0].id;
-
-            if (!customUrl || !thumbnail || !accessToken || !channelId) {
-              logger.error(errorString, {
-                error: "Essential channel details are missing or incomplete.",
-                customUrl,
-                thumbnail,
-                accessToken,
-                channelId,
-              });
-              return NextResponse.redirect(
-                `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
-              );
-            }
-
-            const supabase = createClient();
-            const currentUser = await supabase.auth.getUser();
-            const userId = currentUser.data.user?.id;
-            if (!userId) {
-              logger.error(errorString, { error: "No user found." });
-              return NextResponse.redirect(
-                `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
-              );
-            }
-            const profilePicturePath = await uploadYoutubeProfilePicture({
-              userId,
+              error: "Essential channel details are missing or incomplete.",
+              customUrl,
+              thumbnail,
+              accessToken,
               channelId,
-              pictureUrl: thumbnail,
-              logger,
             });
-            const { error } = await supabase.from("youtube-channels").insert({
-              credentials: { ...tokens },
-              channel_custom_url: customUrl,
-              profile_picture_path: profilePicturePath,
-              id: channelId,
-              user_id: userId,
-            });
-            if (error) {
-              logger.error(errorString, { error: error.message });
-              return NextResponse.redirect(
-                `${origin}/accounts?error=${error.message}`
-              );
-            }
+            return NextResponse.redirect(
+              `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
+            );
+          }
+
+          const supabase = createClient();
+          const currentUser = await supabase.auth.getUser();
+          const userId = currentUser.data.user?.id;
+          if (!userId) {
+            logger.error(errorString, { error: "No user found." });
+            return NextResponse.redirect(
+              `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
+            );
+          }
+          const profilePicturePath = await uploadYoutubeProfilePicture({
+            userId,
+            channelId,
+            pictureUrl: thumbnail,
+            logger,
+          });
+          const { error } = await supabase.from("youtube-channels").insert({
+            credentials: { ...tokens },
+            channel_custom_url: customUrl,
+            profile_picture_path: profilePicturePath,
+            id: channelId,
+            user_id: userId,
+          });
+          if (error) {
+            logger.error(errorString, { error: error.message });
+            return NextResponse.redirect(
+              `${origin}/accounts?error=${error.message}`
+            );
           }
         }
-      );
+      } catch (err) {
+        logger.error(errorString, {
+          error: err instanceof Error ? err.message : String(err),
+        });
+
+        return NextResponse.redirect(
+          `${origin}/accounts?error=${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+      }
     }
   } catch (error: any) {
     logger.error(errorString, {

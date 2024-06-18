@@ -558,7 +558,7 @@ export default function VideoUploadComponent({
                       "posted" && "text-green-400"
                   }
                   ${
-                    youtubeChannelIdToProcessingState[channel.id].includes(
+                    youtubeChannelIdToProcessingState[channel.id]?.includes(
                       "error"
                     ) && "text-red-400"
                   }
@@ -572,7 +572,7 @@ export default function VideoUploadComponent({
                 </p>
                 {youtubeChannelIdToProcessingState[channel.id] ===
                   "processing" && <LoadingSpinner size="h-6 w-6" />}
-                {youtubeChannelIdToProcessingState[channel.id].includes(
+                {youtubeChannelIdToProcessingState[channel.id]?.includes(
                   "error"
                 ) && <XCircleIcon className="h-6 w-6 text-red-400" />}
                 {youtubeChannelIdToProcessingState[channel.id] === "posted" && (
