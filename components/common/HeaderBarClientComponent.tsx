@@ -16,17 +16,18 @@ export default function HeaderBarClientComponent({
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  let navigation = [
-    {
-      name: "Connect An Account",
-      href: "/accounts",
-    },
-  ];
+  let navigation = [];
   if (user) {
-    navigation.push({
-      name: "Create Post",
-      href: "/create-post",
-    });
+    navigation.push(
+      {
+        name: "Connect An Account",
+        href: "/accounts",
+      },
+      {
+        name: "Create Post",
+        href: "/create-post",
+      }
+    );
   }
 
   useEffect(() => {
