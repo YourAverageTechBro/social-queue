@@ -29,7 +29,8 @@ export default function ConnectFacebookAccountButton({
     <button
       onClick={() => {
         loginToFacebook(facebookLoginCallback, {
-          scope: "instagram_basic,instagram_content_publish",
+          scope:
+            "business_management,pages_show_list,instagram_basic,instagram_content_publish",
         });
       }}
       className="p-2 rounded-full flex items-center gap-2 bg-gradient-to-r from-purple-400 via-pink-500 to-orange-400 text-white"
