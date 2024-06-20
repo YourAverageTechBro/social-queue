@@ -18,7 +18,6 @@ import Icons from "@/components/common/Icons";
 import { deleteYoutubeChannel } from "../actions/youtube";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import Modal from "@/components/common/Modal";
-import TikTokLoginButton from "@/app/accounts/TikTokLoginButton";
 
 export default function Dashboard({
   userId,
