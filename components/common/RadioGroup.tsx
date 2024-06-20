@@ -16,9 +16,7 @@ export default function RadioGroups<T>({
 }) {
   return (
     <fieldset>
-      <legend className="text-sm font-semibold leading-6 text-gray-900">
-        Notifications
-      </legend>
+      <legend className="text-sm font-semibold leading-6">Notifications</legend>
       <p className="font-bold mt-1 text-sm leading-6 text-white">{title}</p>
       <div className="mt-2 space-y-6 sm:flex sm:items-center sm:space-x-10 sm:space-y-0">
         {options.map((option) => (

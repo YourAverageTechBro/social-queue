@@ -8,11 +8,8 @@ const navigation = {
 export default function Footer() {
   return (
     <footer>
-      <div className="mx-auto max-w-7xl overflow-hidden px-6 pb-8">
-        <nav
-          className="-mb-6 columns-2 sm:flex sm:justify-center sm:space-x-12"
-          aria-label="Footer"
-        >
+      <div className="mx-auto max-w-7xl overflow-hidden px-6 pb-8 my-8">
+        <nav className="flex justify-center gap-4" aria-label="Footer">
           {navigation.main.map((item) => (
             <div key={item.name} className="pb-6">
               <a

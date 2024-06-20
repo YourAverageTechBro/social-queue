@@ -36,14 +36,14 @@ const MemoizedMedia = memo(
       <div className={"flex flex-col items-center gap-2 w-full"}>
         {file.type === "image/jpeg" ? (
           <img
-            className="w-72 shadow-lg rounded-lg h-auto aspect-image my-8"
+            className="w-96 shadow-lg rounded-lg h-auto aspect-image my-8"
             src={URL.createObjectURL(file)}
             alt={file.name}
           />
         ) : (
           <video
             id="video"
-            className="w-72 shadow-lg rounded-lg h-auto aspect-video my-8"
+            className="w-96 shadow-lg rounded-lg h-auto aspect-video my-8"
             src={URL.createObjectURL(file)}
             controls
           />
@@ -439,7 +439,7 @@ export default function VideoUploadComponent({
           <p className="text-gray-400">Click to add photos or videos</p>
         </div>
       )}
-      <div className={"flex flex-col justify-center w-full md:w-1/2"}>
+      <div className={"flex flex-col justify-center w-full"}>
         <div className={"flex flex-wrap justify-center items-center gap-2"}>
           {instagramAccounts.map((account) => (
             <button
