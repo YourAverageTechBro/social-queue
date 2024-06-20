@@ -1,4 +1,3 @@
-import { Button } from "@/components/common/Button";
 import Icons from "@/components/common/Icons";
 import {
   getInstagramAccountId,
