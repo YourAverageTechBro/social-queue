@@ -102,7 +102,7 @@ export default function Dashboard({
                 alt={instagramAccountToDelete.account_name}
                 className="w-8 h-8 rounded-full"
               />
-              <Icons.instagram className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
+              {/* <Icons.instagram className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" /> */}
             </div>
             <Text text={instagramAccountToDelete.account_name} />
           </div>
@@ -132,7 +132,7 @@ export default function Dashboard({
 
   return (
     <>
-      <div>
+      <div className="mt-8">
         <Text intent={"title"} text={"Connect A New Account"} />
         <div className="flex items-center gap-2 mt-4 justify-center">
           <ConnectYoutubeAccountButton />
@@ -220,7 +220,7 @@ export default function Dashboard({
                   key={account.instagram_business_account_id}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8">
+                    <div className="relative w-8 h-8">
                       <img
                         src={account.picture_file_path}
                         alt={account.account_name}
