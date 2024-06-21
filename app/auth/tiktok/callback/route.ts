@@ -98,6 +98,7 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
   }
 
   revalidatePath("/accounts");
+  return NextResponse.redirect(`${origin}`);
 });
 
 const fetchTikTokUserInfo = async (accessToken: string, logger: Logger) => {
