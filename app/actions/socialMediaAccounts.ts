@@ -33,6 +33,14 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
     logger.error(errorString, youtubeChannelError);
   }
 
+  const { data: tiktokAccounts, error: tiktokAccountError } = await supabase
+    .from("tiktok-accounts")
+    .select("*")
+    .eq("user_id", userId);
+  if (tiktokAccountError) {
+    logger.error(errorString, tiktokAccountError);
+  }
+
   const instagramAccountsWithSignedUrl = instagramAccounts
     ? await Promise.all(
         instagramAccounts?.map(async (account) => {
@@ -62,8 +70,28 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
         })
       )
     : [];
+
+  const tiktokAccountsWithSignedUrl = tiktokAccounts
+    ? await Promise.all(
+        tiktokAccounts?.map(async (account) => {
+          const supabase = createClient();
+          const { data } = await supabase.storage
+            .from(bucketName)
+            .createSignedUrl(
+              account.profile_picture_file_path,
+              60 * 60 * 24 * 300
+            );
+          return {
+            ...account,
+            profile_picture_file_path: data?.signedUrl ?? "",
+          };
+        })
+      )
+    : [];
+
   return {
     instagramAccounts: instagramAccountsWithSignedUrl,
     youtubeChannels: youtubeChannelsWithSignedUrl,
+    tiktokAccounts: tiktokAccountsWithSignedUrl,
   };
 };

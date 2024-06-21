@@ -157,6 +157,44 @@ export type Database = {
           },
         ]
       }
+      "tiktok-accounts": {
+        Row: {
+          access_token: string
+          account_name: string
+          created_at: string
+          id: string
+          profile_picture_file_path: string
+          refresh_token: string
+          user_id: string | null
+        }
+        Insert: {
+          access_token: string
+          account_name: string
+          created_at?: string
+          id: string
+          profile_picture_file_path: string
+          refresh_token: string
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string
+          account_name?: string
+          created_at?: string
+          id?: string
+          profile_picture_file_path?: string
+          refresh_token?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiktok-accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       "youtube-channels": {
         Row: {
           channel_custom_url: string

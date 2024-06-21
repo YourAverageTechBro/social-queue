@@ -18,15 +18,20 @@ import Icons from "@/components/common/Icons";
 import { deleteYoutubeChannel } from "../actions/youtube";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import Modal from "@/components/common/Modal";
+import { deleteTikTokAccount } from "../actions/tiktok";
 
 export default function Dashboard({
   userId,
   instagramAccounts,
+  tiktokAccounts,
   youtubeChannels,
+  authError,
 }: {
   userId: string;
   instagramAccounts: Tables<"instagram-accounts">[];
+  tiktokAccounts: Tables<"tiktok-accounts">[];
   youtubeChannels: Tables<"youtube-channels">[];
+  authError: string;
 }) {
   const [appScopedUserId, setAppScopedUserId] = useState<string>("");
   const [newInstagramAccounts, setNewInstagramAccounts] = useState<
@@ -46,11 +51,24 @@ export default function Dashboard({
       error: null,
       data: "",
     });
+  const [deleteTikTokAccountState, deleteTikTokAccountFormAction] =
+    useFormState(deleteTikTokAccount, {
+      error: null,
+      data: "",
+    });
   const [openConfirmDeleteModal, setOpenConfirmDeleteModal] = useState(false);
   const [instagramAccountToDelete, setInstagramAccountToDelete] =
     useState<Tables<"instagram-accounts">>();
+  const [tiktokAccountToDelete, setTiktokAccountToDelete] =
+    useState<Tables<"tiktok-accounts">>();
   const [youtubeChannelToDelete, setYoutubeChannelToDelete] =
     useState<Tables<"youtube-channels">>();
+
+  useEffect(() => {
+    if (authError) {
+      toast.error(authError);
+    }
+  }, [authError]);
 
   useEffect(() => {
     if (state.error) {
@@ -85,6 +103,15 @@ export default function Dashboard({
       setOpenConfirmDeleteModal(false);
     }
   }, [deleteYoutubeChannelState]);
+
+  useEffect(() => {
+    if (deleteTikTokAccountState.error) {
+      toast.error(deleteTikTokAccountState.error);
+    } else if (deleteTikTokAccountState.data) {
+      toast.success(deleteTikTokAccountState.data);
+      setOpenConfirmDeleteModal(false);
+    }
+  }, [deleteTikTokAccountState]);
 
   const constructSocialAccountBlock = (
     instagramAccountToDelete: Tables<"instagram-accounts"> | undefined,
@@ -208,7 +235,10 @@ export default function Dashboard({
             ))}
         </div>
 
-        {instagramAccounts.length + youtubeChannels.length > 0 && (
+        {instagramAccounts.length +
+          tiktokAccounts.length +
+          youtubeChannels.length >
+          0 && (
           <div className="mt-4">
             <Text intent={"title"} text={"Your Existing Accounts"} />
             <div
@@ -270,6 +300,33 @@ export default function Dashboard({
                   </div>
                 </div>
               ))}
+              {tiktokAccounts.map((account) => (
+                <div
+                  className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+                  key={account.id}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-8 h-8">
+                      <img
+                        src={account.profile_picture_file_path}
+                        alt={account.account_name}
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <Icons.tiktok className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
+                    </div>
+                    <Text text={account.account_name} />
+                    <button
+                      onClick={() => {
+                        setTiktokAccountToDelete(account);
+                        setOpenConfirmDeleteModal(true);
+                      }}
+                      type={"submit"}
+                    >
+                      <XCircleIcon className="w-6 h-6 text-red-600" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -300,6 +357,19 @@ export default function Dashboard({
                 type={"hidden"}
                 name={"instagramBusinessAccountId"}
                 value={instagramAccountToDelete.instagram_business_account_id}
+              />
+              <input type={"hidden"} name={"userId"} value={userId} />
+              <Button intent="danger" type={"submit"}>
+                Delete
+              </Button>
+            </form>
+          )}
+          {tiktokAccountToDelete && (
+            <form action={deleteTikTokAccountFormAction}>
+              <input
+                type={"hidden"}
+                name={"tiktokAccountId"}
+                value={tiktokAccountToDelete.id}
               />
               <input type={"hidden"} name={"userId"} value={userId} />
               <Button intent="danger" type={"submit"}>
