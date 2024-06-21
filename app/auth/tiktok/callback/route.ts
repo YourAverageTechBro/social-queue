@@ -107,7 +107,7 @@ const fetchTikTokUserInfo = async (accessToken: string, logger: Logger) => {
   });
   logger.info("fetching tiktok user info");
   const response = await fetch(
-    `https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name`,
+    `https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,username`,
     {
       method: "GET",
       headers: {
