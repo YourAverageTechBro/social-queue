@@ -44,6 +44,7 @@ export const deleteTikTokAccount = async (prevState: any, data: FormData) => {
   const userId = data.get("userId") as string;
   const tiktokAccountId = data.get("tiktokAccountId") as string;
   const logger = new Logger().with({
+    function: "deleteTikTokAccount",
     userId,
     tiktokAccountId,
   });

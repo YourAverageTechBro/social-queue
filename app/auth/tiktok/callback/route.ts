@@ -21,9 +21,7 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
     const userId = currentUser.data.user?.id;
     if (!userId) {
       logger.error(errorString, { error: "No user found." });
-      return NextResponse.redirect(
-        `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
-      );
+      throw Error("No user found");
     }
     const response = await fetch(
       `https://open.tiktokapis.com/v2/oauth/token/`,
@@ -51,6 +49,7 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
         error: data.error,
         error_description: data.error_description,
       });
+      throw Error("Failed to get access token from TikTok");
     }
     logger.info("Got response from tiktok", {
       data,
@@ -84,15 +83,18 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
       logger.error(errorString, {
         error: userError,
       });
+      throw userError;
     }
   } catch (error) {
     logger.error(errorString, {
       error: error instanceof Error ? error.message : JSON.stringify(error),
     });
-
+    await logger.flush();
     redirect(
       "/accounts?error=We had trouble connecting your TikTok account. Please try again."
     );
+  } finally {
+    await logger.flush();
   }
 
   revalidatePath("/accounts");
