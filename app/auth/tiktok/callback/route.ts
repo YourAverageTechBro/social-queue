@@ -100,10 +100,7 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
   revalidatePath("/accounts");
 });
 
-export const fetchTikTokUserInfo = async (
-  accessToken: string,
-  logger: Logger
-) => {
+const fetchTikTokUserInfo = async (accessToken: string, logger: Logger) => {
   logger = logger.with({
     function: "fetchTikTokUserInfo",
   });
