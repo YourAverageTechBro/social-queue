@@ -143,7 +143,7 @@ const fetchTikTokUserInfo = async (accessToken: string, logger: Logger) => {
   return user;
 };
 
-export const uploadTikTokProfilePicture = async ({
+const uploadTikTokProfilePicture = async ({
   userId,
   accountId,
   pictureUrl,
