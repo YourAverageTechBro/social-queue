@@ -160,28 +160,22 @@ export type Database = {
       "tiktok-accounts": {
         Row: {
           access_token: string
-          account_name: string
           created_at: string
           id: string
-          profile_picture_file_path: string
           refresh_token: string
           user_id: string | null
         }
         Insert: {
           access_token: string
-          account_name: string
           created_at?: string
           id: string
-          profile_picture_file_path: string
           refresh_token: string
           user_id?: string | null
         }
         Update: {
           access_token?: string
-          account_name?: string
           created_at?: string
           id?: string
-          profile_picture_file_path?: string
           refresh_token?: string
           user_id?: string | null
         }
