@@ -20,7 +20,7 @@ import {
 } from "@/app/actions/socialMediaPosts";
 import Icons from "@/components/common/Icons";
 import TextInput from "@/components/common/TextInput";
-import { postVideoToYoutube, YoutubeVideoStatus } from "../actions/youtube";
+import { YoutubeVideoStatus } from "../actions/youtube";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useLogger } from "next-axiom";
 import { errorString } from "@/utils/logging";
@@ -69,7 +69,10 @@ export default function VideoUploadComponent({
   userId,
 }: {
   instagramAccounts: Tables<"instagram-accounts">[];
-  tiktokAccounts: Tables<"tiktok-accounts">[];
+  tiktokAccounts: (Tables<"tiktok-accounts"> & {
+    profile_picture_file_path: string;
+    account_name: string;
+  })[];
   youtubeChannels: Tables<"youtube-channels">[];
   userId: string;
 }) {
@@ -77,7 +80,10 @@ export default function VideoUploadComponent({
     Tables<"instagram-accounts">[]
   >([]);
   const [selectedTiktokAccounts, setSelectedTiktokAccounts] = useState<
-    Tables<"tiktok-accounts">[]
+    (Tables<"tiktok-accounts"> & {
+      profile_picture_file_path: string;
+      account_name: string;
+    })[]
   >([]);
   const [selectedYoutubeChannels, setSelectedYoutubeChannels] = useState<
     Tables<"youtube-channels">[]
@@ -592,14 +598,14 @@ export default function VideoUploadComponent({
             >
               <div className="flex items-center gap-2">
                 <div className="relative w-8 h-8">
-                  {/* <img
+                  <img
                     src={account.profile_picture_file_path}
                     alt={account.account_name}
                     className="w-8 h-8 rounded-full"
-                  /> */}
+                  />
                   <Icons.tiktok className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
                 </div>
-                {/* <Text text={account.account_name} /> */}
+                <Text text={account.account_name} />
               </div>
               <div className="text-sm mt-1 flex items-center gap-2 justify-between w-full">
                 <p
