@@ -9,7 +9,7 @@ export const POST = withAxiom(async (req: AxiomRequest) => {
     const title = body.get("title") as string;
     const video = body.get("video") as File;
     const youtubeChannelId = body.get("youtubeChannelId") as string;
-    const status = body.get("status") as string as YoutubeVideoStatus;
+    const isPrivate = body.get("isPrivate") === "true";
     const parentSocialMediaPostId = body.get(
       "parentSocialMediaPostId"
     ) as string;
@@ -20,7 +20,7 @@ export const POST = withAxiom(async (req: AxiomRequest) => {
       video,
       youtubeChannelId,
       parentSocialMediaPostId,
-      status,
+      isPrivate,
     });
     return NextResponse.json({ message: "success" });
   } catch (error) {

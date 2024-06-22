@@ -29,12 +29,27 @@ const textStyles = cva("", {
 
 type TextProps = {
   text: string;
+  additionalStyles?: string;
 };
 
 export interface Props extends TextProps, VariantProps<typeof textStyles> {}
 
-const Text = ({ intent, color, alignment, ...props }: Props) => (
-  <p className={textStyles({ alignment, intent, color })}>{props.text}</p>
+const Text = ({
+  intent,
+  color,
+  alignment,
+  additionalStyles,
+  ...props
+}: Props) => (
+  <p
+    className={`${textStyles({
+      alignment,
+      intent,
+      color,
+    })} ${additionalStyles}`}
+  >
+    {props.text}
+  </p>
 );
 
 export default Text;

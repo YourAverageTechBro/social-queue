@@ -34,7 +34,7 @@ export default function TextInput({
   };
 
   return (
-    <div>
+    <>
       {title && <div className="text-sm font-bold">{title}</div>}
       <input
         className={
@@ -54,6 +54,6 @@ export default function TextInput({
         </div>
       )}
       {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
-    </div>
+    </>
   );
 }
