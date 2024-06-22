@@ -10,14 +10,17 @@ export default async function PostPage() {
   if (!user) {
     redirect("/login");
   }
-  const { instagramAccounts, youtubeChannels } =
+  const { instagramAccounts, tiktokAccounts, youtubeChannels } =
     await fetchUserConnectSocialMediaAccounts(user.id);
 
   return (
-    <VideoUploadComponent
-      instagramAccounts={instagramAccounts}
-      userId={user.id}
-      youtubeChannels={youtubeChannels}
-    />
+    <div className="flex flex-col items-center w-[1024px]">
+      <VideoUploadComponent
+        instagramAccounts={instagramAccounts}
+        userId={user.id}
+        tiktokAccounts={tiktokAccounts}
+        youtubeChannels={youtubeChannels}
+      />
+    </div>
   );
 }

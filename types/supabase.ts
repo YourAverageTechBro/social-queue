@@ -195,6 +195,66 @@ export type Database = {
           },
         ]
       }
+      "tiktok-posts": {
+        Row: {
+          caption: string | null
+          created_at: string
+          disable_comment: boolean
+          disable_duet: boolean
+          disable_stitch: boolean
+          id: string
+          parent_social_media_post_id: string
+          privacy_level: string
+          publicaly_available_post_id: string | null
+          publish_id: string
+          user_id: string
+          video_cover_timestamp_ms: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          disable_comment: boolean
+          disable_duet: boolean
+          disable_stitch: boolean
+          id?: string
+          parent_social_media_post_id: string
+          privacy_level: string
+          publicaly_available_post_id?: string | null
+          publish_id: string
+          user_id: string
+          video_cover_timestamp_ms: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          disable_comment?: boolean
+          disable_duet?: boolean
+          disable_stitch?: boolean
+          id?: string
+          parent_social_media_post_id?: string
+          privacy_level?: string
+          publicaly_available_post_id?: string | null
+          publish_id?: string
+          user_id?: string
+          video_cover_timestamp_ms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiktok-posts_parent_social_media_post_id_fkey"
+            columns: ["parent_social_media_post_id"]
+            isOneToOne: false
+            referencedRelation: "social-media-posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tiktok-posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       "youtube-channels": {
         Row: {
           channel_custom_url: string
