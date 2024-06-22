@@ -106,27 +106,29 @@ export const uploadTikTokPost = async ({
   userId,
   caption,
   accessToken,
-  videoFilePath,
+  filePath,
   privacyLevel,
   disableDuet,
   disableComment,
   videoCoverTimestamp,
+  postType,
 }: {
   userId: string;
   caption: string;
   accessToken: string;
-  videoFilePath: string;
+  filePath: string;
   privacyLevel: PrivacyLevel;
   disableDuet: boolean;
   disableComment: boolean;
   videoCoverTimestamp: number;
+  postType: "video" | "image";
 }) => {
   let logger = new Logger().with({
     function: "uploadTikTokPost",
     userId,
     caption,
     accessToken,
-    videoFilePath,
+    filePath,
     privacyLevel,
     disableDuet,
     disableComment,
@@ -135,7 +137,7 @@ export const uploadTikTokPost = async ({
   const signedUrl = await getSignedUrl({
     bucketName: socialMediaPostMediaFilesStorageBucket,
     duration: 600,
-    filePath: videoFilePath,
+    filePath: filePath,
   });
   logger = logger.with({
     signedUrl,
