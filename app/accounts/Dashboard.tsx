@@ -145,14 +145,14 @@ export default function Dashboard({
         >
           <div className="flex items-center gap-2">
             <div className="relative w-8 h-8">
-              <img
+              {/* <img
                 src={tiktokAccountToDelete.profile_picture_file_path}
                 alt={tiktokAccountToDelete.account_name}
                 className="w-8 h-8 rounded-full"
-              />
+              /> */}
               <Icons.tiktok className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
             </div>
-            <Text text={tiktokAccountToDelete.account_name} />
+            {/* <Text text={tiktokAccountToDelete.account_name} /> */}
           </div>
         </div>
       );
