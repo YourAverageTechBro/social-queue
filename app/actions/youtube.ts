@@ -36,14 +36,14 @@ export const postVideoToYoutube = async ({
   userId,
   parentSocialMediaPostId,
   youtubeChannelId,
-  status,
+  isPrivate,
 }: {
   title: string;
   video: File;
   userId: string;
   parentSocialMediaPostId: string;
   youtubeChannelId: string;
-  status: YoutubeVideoStatus;
+  isPrivate: boolean;
 }) => {
   const logger = new Logger().with({
     function: "postVideoToYoutube",
@@ -67,7 +67,7 @@ export const postVideoToYoutube = async ({
       part: ["snippet", "status"],
       requestBody: {
         snippet: { title },
-        status: { privacyStatus: status },
+        status: { privacyStatus: isPrivate ? "private" : "public" },
       },
       media: {
         body: Readable.from(video.stream() as any),

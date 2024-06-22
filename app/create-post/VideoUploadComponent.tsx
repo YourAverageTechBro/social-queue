@@ -31,6 +31,7 @@ import {
   uploadTikTokPost,
   writeTikTokPostToSupabase,
 } from "../actions/tiktok";
+import Toggle from "@/components/common/Toggle";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -76,6 +77,9 @@ export default function VideoUploadComponent({
   youtubeChannels: Tables<"youtube-channels">[];
   userId: string;
 }) {
+  const [disableDuet, setDisableDuet] = useState<boolean>(false);
+  const [disableComment, setDisableComment] = useState<boolean>(false);
+  const [privateYoutube, setPrivateYoutube] = useState<boolean>(false);
   const [selectedInstagramAccounts, setSelectedInstagramAccounts] = useState<
     Tables<"instagram-accounts">[]
   >([]);
@@ -110,9 +114,8 @@ export default function VideoUploadComponent({
     [key: string]: string;
   }>({});
   const [youtubeTitle, setYoutubeTitle] = useState<string>("");
-  const [youtubeVideoStatus, setYoutubeVideoStatus] =
-    useState<YoutubeVideoStatus>("public");
-  const [caption, setCaption] = useState<string>("");
+  const [instagramCaption, setInstagramCaption] = useState<string>("");
+  const [tiktokCaption, setTiktokCaption] = useState<string>("");
   let logger = useLogger();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -309,7 +312,7 @@ export default function VideoUploadComponent({
               instagramCarouselMediaContainerIds,
               instagramBusinessAccountId: account.instagram_business_account_id,
               userId,
-              caption,
+              caption: instagramCaption,
             }).then((instagramMediaContainerId) =>
               checkInstagramContainerStatus({
                 containerIds: [instagramMediaContainerId],
@@ -326,7 +329,7 @@ export default function VideoUploadComponent({
                   saveInstagramId({
                     instagramMediaId,
                     parentSocialMediaPostId: socialMediaPostId,
-                    caption,
+                    caption: instagramCaption,
                     userId,
                   });
                   setInstagramAccountIdToProcessingState({
@@ -364,7 +367,7 @@ export default function VideoUploadComponent({
       createInstagramContainer({
         instagramBusinessAccountId: account.instagram_business_account_id,
         filePath,
-        caption,
+        caption: instagramCaption,
         userId,
         postType: file.type.includes("video") ? "video" : "image",
         isCarouselItem: false,
@@ -383,7 +386,7 @@ export default function VideoUploadComponent({
               saveInstagramId({
                 instagramMediaId,
                 parentSocialMediaPostId: socialMediaPostId,
-                caption: caption ?? "",
+                caption: instagramCaption ?? "",
                 userId,
               });
               setInstagramAccountIdToProcessingState({
@@ -405,7 +408,7 @@ export default function VideoUploadComponent({
       });
       uploadTikTokPost({
         userId,
-        caption,
+        caption: tiktokCaption,
         accessToken: account.access_token,
         filePath,
         privacyLevel: "SELF_ONLY",
@@ -420,7 +423,7 @@ export default function VideoUploadComponent({
         }).then(() => {
           writeTikTokPostToSupabase({
             userId,
-            caption,
+            caption: tiktokCaption,
             publishId,
             privacyLevel: "SELF_ONLY",
             disableDuet: true,
@@ -444,7 +447,7 @@ export default function VideoUploadComponent({
       formData.append("title", youtubeTitle);
       formData.append("userId", userId);
       formData.append("parentSocialMediaPostId", socialMediaPostId);
-      formData.append("status", youtubeVideoStatus);
+      formData.append("isPrivate", privateYoutube.toString());
       fetch("/api/youtube/post", {
         method: "POST",
         body: formData,
@@ -699,7 +702,7 @@ export default function VideoUploadComponent({
         </div>
         <form
           action={processSocialMediaPost}
-          className={"flex flex-col justify-center"}
+          className={"flex flex-col justify-center items-center"}
         >
           <input type={"hidden"} name={"userId"} value={userId} />
           <input
@@ -715,18 +718,32 @@ export default function VideoUploadComponent({
           <input type={"hidden"} name={"numberOfFiles"} value={files.length} />
           {selectedInstagramAccounts.length + selectedTiktokAccounts.length >
             0 && (
-            <TextArea
-              title={"Caption"}
-              name={"caption"}
-              placeholder={
-                "Check out thecontentmarketingblueprint.com for help with social media marketing!"
-              }
-              value={caption}
-              setValue={setCaption}
-            />
+            <div className="flex flex-col items-start gap-2 w-full">
+              <Text
+                alignment={"left"}
+                intent="title"
+                text="Instagram Settings"
+                additionalStyles="mt-4"
+              />
+              <TextArea
+                title={"Caption"}
+                name={"instagramCaption"}
+                placeholder={
+                  "Check out thecontentmarketingblueprint.com for help with social media marketing!"
+                }
+                value={instagramCaption}
+                setValue={setInstagramCaption}
+              />
+            </div>
           )}
           {selectedYoutubeChannels.length > 0 && (
-            <>
+            <div className="flex flex-col items-start gap-2 w-full">
+              <Text
+                alignment={"left"}
+                intent="title"
+                text="Youtube Settings"
+                additionalStyles="mt-4"
+              />
               <TextInput
                 name={"youtubeTitle"}
                 title={"Youtube Title"}
@@ -739,16 +756,41 @@ export default function VideoUploadComponent({
                 value={youtubeTitle}
                 setValue={setYoutubeTitle}
               />
-              <RadioGroups
-                title={"Youtube Video Status"}
-                options={[
-                  { value: "public", title: "Public" },
-                  { value: "private", title: "Private" },
-                ]}
-                value={youtubeVideoStatus}
-                setValue={setYoutubeVideoStatus}
+              <Toggle
+                enabled={privateYoutube}
+                setEnabled={setPrivateYoutube}
+                label="Private Youtube Video"
               />
-            </>
+            </div>
+          )}
+          {selectedTiktokAccounts.length > 0 && (
+            <div className="flex flex-col items-start gap-2 w-full">
+              <Text
+                alignment={"left"}
+                intent="title"
+                text="TikTok Settings"
+                additionalStyles="mt-4"
+              />
+              <TextArea
+                title={"Caption"}
+                name={"tiktokCaption"}
+                placeholder={
+                  "Check out thecontentmarketingblueprint.com for help with social media marketing!"
+                }
+                value={tiktokCaption}
+                setValue={setTiktokCaption}
+              />
+              <Toggle
+                enabled={disableDuet}
+                setEnabled={setDisableDuet}
+                label="Disable Duet"
+              />
+              <Toggle
+                enabled={disableComment}
+                setEnabled={setDisableComment}
+                label="Disable Comment"
+              />
+            </div>
           )}
           <Button
             disabled={

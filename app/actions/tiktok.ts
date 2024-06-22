@@ -99,7 +99,6 @@ export const deleteTikTokAccount = async (prevState: any, data: FormData) => {
 type PrivacyLevel =
   | "PUBLIC_TO_EVERYONE"
   | "MUTUAL_FOLLOW_FRIENDS"
-  | "FOLLOWER_OF_CREATOR"
   | "SELF_ONLY";
 
 export const uploadTikTokPost = async ({
