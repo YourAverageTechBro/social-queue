@@ -20,12 +20,17 @@ import {
 } from "@/app/actions/socialMediaPosts";
 import Icons from "@/components/common/Icons";
 import TextInput from "@/components/common/TextInput";
-import { postVideoToYoutube, YoutubeVideoStatus } from "../actions/youtube";
+import { YoutubeVideoStatus } from "../actions/youtube";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useLogger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/client";
 import RadioGroups from "@/components/common/RadioGroup";
+import {
+  checkTikTokPublishStatus,
+  uploadTikTokPost,
+  writeTikTokPostToSupabase,
+} from "../actions/tiktok";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -59,15 +64,26 @@ const MemoizedMedia = memo(
 
 export default function VideoUploadComponent({
   instagramAccounts,
+  tiktokAccounts,
   youtubeChannels,
   userId,
 }: {
   instagramAccounts: Tables<"instagram-accounts">[];
+  tiktokAccounts: (Tables<"tiktok-accounts"> & {
+    profile_picture_file_path: string;
+    account_name: string;
+  })[];
   youtubeChannels: Tables<"youtube-channels">[];
   userId: string;
 }) {
   const [selectedInstagramAccounts, setSelectedInstagramAccounts] = useState<
     Tables<"instagram-accounts">[]
+  >([]);
+  const [selectedTiktokAccounts, setSelectedTiktokAccounts] = useState<
+    (Tables<"tiktok-accounts"> & {
+      profile_picture_file_path: string;
+      account_name: string;
+    })[]
   >([]);
   const [selectedYoutubeChannels, setSelectedYoutubeChannels] = useState<
     Tables<"youtube-channels">[]
@@ -78,6 +94,12 @@ export default function VideoUploadComponent({
   const [
     instagramAccountIdToProcessingState,
     setInstagramAccountIdToProcessingState,
+  ] = useState<{
+    [key: string]: string;
+  }>({});
+  const [
+    tiktokAccountIdToProcessingState,
+    setTiktokAccountIdToProcessingState,
   ] = useState<{
     [key: string]: string;
   }>({});
@@ -377,6 +399,41 @@ export default function VideoUploadComponent({
           });
         });
     });
+    selectedTiktokAccounts.forEach((account) => {
+      setTiktokAccountIdToProcessingState({
+        [account.id]: "processing",
+      });
+      uploadTikTokPost({
+        userId,
+        caption,
+        accessToken: account.access_token,
+        filePath,
+        privacyLevel: "SELF_ONLY",
+        disableDuet: true,
+        disableComment: true,
+        videoCoverTimestamp: 0,
+        postType: file.type.includes("video") ? "video" : "image",
+      }).then((publishId) =>
+        checkTikTokPublishStatus({
+          publishIds: [publishId],
+          accessToken: account.access_token,
+        }).then(() => {
+          writeTikTokPostToSupabase({
+            userId,
+            caption,
+            publishId,
+            privacyLevel: "SELF_ONLY",
+            disableDuet: true,
+            disableComment: true,
+            videoCoverTimestamp: 0,
+            parentSocialMediaPostId: socialMediaPostId,
+          });
+          setTiktokAccountIdToProcessingState({
+            [account.id]: "posted",
+          });
+        })
+      );
+    });
     selectedYoutubeChannels.forEach((channel) => {
       setYoutubeChannelIdToProcessingState({
         [channel.id]: "processing",
@@ -433,7 +490,7 @@ export default function VideoUploadComponent({
       </div>
       {files.length === 0 && (
         <div
-          className="mb-4 border-2 border-gray-200 hover:border-orange-500 hover:cursor-pointer w-full md:w-1/2 h-48 rounded-lg flex items-center justify-center"
+          className="mb-4 border-2 border-gray-200 hover:border-orange-500 hover:cursor-pointer w-full h-48 rounded-lg flex items-center justify-center"
           onClick={handleCustomButtonClick}
         >
           <p className="text-gray-400">Click to add photos or videos</p>
@@ -523,6 +580,64 @@ export default function VideoUploadComponent({
               </div>
             </button>
           ))}
+          {tiktokAccounts.map((account) => (
+            <button
+              className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2 ${
+                selectedTiktokAccounts.find((acc) => acc.id === account.id) &&
+                "border-2 border-orange-500"
+              }`}
+              onClick={() =>
+                setSelectedTiktokAccounts((prev) => {
+                  if (prev.find((acc) => acc.id === account.id)) {
+                    return prev.filter((acc) => acc.id !== account.id);
+                  }
+                  return [...prev, account];
+                })
+              }
+              key={account.id}
+            >
+              <div className="flex items-center gap-2">
+                <div className="relative w-8 h-8">
+                  <img
+                    src={account.profile_picture_file_path}
+                    alt={account.account_name}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <Icons.tiktok className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
+                </div>
+                <Text text={account.account_name} />
+              </div>
+              <div className="text-sm mt-1 flex items-center gap-2 justify-between w-full">
+                <p
+                  className={`
+                  ${
+                    tiktokAccountIdToProcessingState[account.id] === "posted" &&
+                    "text-green-400"
+                  }
+                  ${
+                    tiktokAccountIdToProcessingState[account.id]?.includes(
+                      "error"
+                    ) && "text-red-400"
+                  }
+                  ${
+                    tiktokAccountIdToProcessingState[account.id] ===
+                      "processing" && "text-orange-400"
+                  }
+                `}
+                >
+                  {tiktokAccountIdToProcessingState[account.id]}
+                </p>
+                {tiktokAccountIdToProcessingState[account.id] ===
+                  "processing" && <LoadingSpinner size="h-6 w-6" />}
+                {tiktokAccountIdToProcessingState[account.id]?.includes(
+                  "error"
+                ) && <XCircleIcon className="h-6 w-6 text-red-400" />}
+                {tiktokAccountIdToProcessingState[account.id] === "posted" && (
+                  <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                )}
+              </div>
+            </button>
+          ))}
           {youtubeChannels.map((channel) => (
             <button
               className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2 ${
@@ -598,7 +713,8 @@ export default function VideoUploadComponent({
             accept="video/mp4, video/quicktime, image/jpeg"
           />
           <input type={"hidden"} name={"numberOfFiles"} value={files.length} />
-          {selectedInstagramAccounts.length > 0 && (
+          {selectedInstagramAccounts.length + selectedTiktokAccounts.length >
+            0 && (
             <TextArea
               title={"Caption"}
               name={"caption"}
@@ -637,7 +753,8 @@ export default function VideoUploadComponent({
           <Button
             disabled={
               (selectedInstagramAccounts.length === 0 &&
-                selectedYoutubeChannels.length === 0) ||
+                selectedYoutubeChannels.length === 0 &&
+                selectedTiktokAccounts.length === 0) ||
               files.length === 0 ||
               files.some((entry) => entry.errorMessage) ||
               (selectedYoutubeChannels.length > 0 &&

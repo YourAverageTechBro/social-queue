@@ -29,7 +29,10 @@ export default function Dashboard({
 }: {
   userId: string;
   instagramAccounts: Tables<"instagram-accounts">[];
-  tiktokAccounts: Tables<"tiktok-accounts">[];
+  tiktokAccounts: (Tables<"tiktok-accounts"> & {
+    profile_picture_file_path: string;
+    account_name: string;
+  })[];
   youtubeChannels: Tables<"youtube-channels">[];
   authError: string;
 }) {
@@ -59,8 +62,12 @@ export default function Dashboard({
   const [openConfirmDeleteModal, setOpenConfirmDeleteModal] = useState(false);
   const [instagramAccountToDelete, setInstagramAccountToDelete] =
     useState<Tables<"instagram-accounts">>();
-  const [tiktokAccountToDelete, setTiktokAccountToDelete] =
-    useState<Tables<"tiktok-accounts">>();
+  const [tiktokAccountToDelete, setTiktokAccountToDelete] = useState<
+    Tables<"tiktok-accounts"> & {
+      profile_picture_file_path: string;
+      account_name: string;
+    }
+  >();
   const [youtubeChannelToDelete, setYoutubeChannelToDelete] =
     useState<Tables<"youtube-channels">>();
 
@@ -115,6 +122,12 @@ export default function Dashboard({
 
   const constructSocialAccountBlock = (
     instagramAccountToDelete: Tables<"instagram-accounts"> | undefined,
+    tiktokAccountToDelete:
+      | (Tables<"tiktok-accounts"> & {
+          profile_picture_file_path: string;
+          account_name: string;
+        })
+      | undefined,
     youtubeChannelToDelete: Tables<"youtube-channels"> | undefined
   ) => {
     if (instagramAccountToDelete) {
@@ -130,9 +143,28 @@ export default function Dashboard({
                 alt={instagramAccountToDelete.account_name}
                 className="w-8 h-8 rounded-full"
               />
-              {/* <Icons.instagram className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" /> */}
+              <Icons.instagram className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
             </div>
             <Text text={instagramAccountToDelete.account_name} />
+          </div>
+        </div>
+      );
+    } else if (tiktokAccountToDelete) {
+      return (
+        <div
+          className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+          key={tiktokAccountToDelete.id}
+        >
+          <div className="flex items-center gap-2">
+            <div className="relative w-8 h-8">
+              <img
+                src={tiktokAccountToDelete.profile_picture_file_path}
+                alt={tiktokAccountToDelete.account_name}
+                className="w-8 h-8 rounded-full"
+              />
+              <Icons.tiktok className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
+            </div>
+            <Text text={tiktokAccountToDelete.account_name} />
           </div>
         </div>
       );
@@ -336,12 +368,14 @@ export default function Dashboard({
         setOpen={setOpenConfirmDeleteModal}
         onCloseCallback={() => {
           setInstagramAccountToDelete(undefined);
+          setTiktokAccountToDelete(undefined);
           setYoutubeChannelToDelete(undefined);
         }}
       >
         <Text text={"Are you sure you want to delete this account?"} />
         {constructSocialAccountBlock(
           instagramAccountToDelete,
+          tiktokAccountToDelete,
           youtubeChannelToDelete
         )}
         <div className="flex items-center justify-center gap-2">

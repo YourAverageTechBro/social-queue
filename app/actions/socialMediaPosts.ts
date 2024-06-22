@@ -4,6 +4,7 @@ import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import { FacebookGraphError } from "@/utils/facebookSdk";
+import { getSignedUrl } from "@/utils/supabase/storage";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -80,40 +81,31 @@ export const createInstagramContainer = async ({
     await logger.flush();
     throw new Error("No bucket name found in environment variables");
   }
-  const supabase = createClient();
-  const { data, error } = await supabase.storage
-    .from(bucketName)
-    .createSignedUrl(filePath, 600);
-  if (error) {
-    logger.error(errorString, error);
-    await logger.flush();
-    throw error;
-  }
-  if (!data) {
-    logger.error(errorString, { error: "No signed url returned for file" });
-    await logger.flush();
-    throw new Error("No signed url returned for file");
-  }
+  const signedUrl = await getSignedUrl({
+    bucketName,
+    duration: 600,
+    filePath,
+  });
   const videoSearchParams = {
-    video_url: data.signedUrl,
+    video_url: signedUrl,
     caption,
     media_type: "REELS",
   };
   const imageSearchParams = {
-    image_url: data.signedUrl,
+    image_url: signedUrl,
     caption,
   };
   let carouselSearchParams = {};
   if (postType === "video") {
     carouselSearchParams = {
-      video_url: data.signedUrl,
+      video_url: signedUrl,
       media_type: "REELS",
       is_carousel_item: true,
     };
   } else if (postType === "image") {
     carouselSearchParams = {
       is_carousel_item: true,
-      image_url: data.signedUrl,
+      image_url: signedUrl,
     };
   }
   let finalSearchParams = null;
@@ -147,7 +139,6 @@ export const createInstagramContainer = async ({
     id: string;
   };
   logger.info("Creating media container", {
-    error,
     id,
   });
   if (facebookGraphError) {

@@ -20,8 +20,8 @@ export default function Modal({
         className="relative z-20"
         onClose={(value) => {
           if (canClose) {
-            setOpen(value);
             onCloseCallback?.();
+            setOpen(value);
           }
         }}
       >

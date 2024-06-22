@@ -160,34 +160,88 @@ export type Database = {
       "tiktok-accounts": {
         Row: {
           access_token: string
-          account_name: string
           created_at: string
           id: string
-          profile_picture_file_path: string
           refresh_token: string
           user_id: string | null
         }
         Insert: {
           access_token: string
-          account_name: string
           created_at?: string
           id: string
-          profile_picture_file_path: string
           refresh_token: string
           user_id?: string | null
         }
         Update: {
           access_token?: string
-          account_name?: string
           created_at?: string
           id?: string
-          profile_picture_file_path?: string
           refresh_token?: string
           user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "tiktok-accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      "tiktok-posts": {
+        Row: {
+          caption: string | null
+          created_at: string
+          disable_comment: boolean
+          disable_duet: boolean
+          disable_stitch: boolean
+          id: string
+          parent_social_media_post_id: string
+          privacy_level: string
+          publicaly_available_post_id: string | null
+          publish_id: string
+          user_id: string
+          video_cover_timestamp_ms: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          disable_comment: boolean
+          disable_duet: boolean
+          disable_stitch: boolean
+          id?: string
+          parent_social_media_post_id: string
+          privacy_level: string
+          publicaly_available_post_id?: string | null
+          publish_id: string
+          user_id: string
+          video_cover_timestamp_ms: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          disable_comment?: boolean
+          disable_duet?: boolean
+          disable_stitch?: boolean
+          id?: string
+          parent_social_media_post_id?: string
+          privacy_level?: string
+          publicaly_available_post_id?: string | null
+          publish_id?: string
+          user_id?: string
+          video_cover_timestamp_ms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiktok-posts_parent_social_media_post_id_fkey"
+            columns: ["parent_social_media_post_id"]
+            isOneToOne: false
+            referencedRelation: "social-media-posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tiktok-posts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
