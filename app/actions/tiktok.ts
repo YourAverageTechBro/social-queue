@@ -96,31 +96,42 @@ export const deleteTikTokAccount = async (prevState: any, data: FormData) => {
     error: null,
   };
 };
-type PrivacyLevel =
+export type PrivacyLevel =
   | "PUBLIC_TO_EVERYONE"
   | "MUTUAL_FOLLOW_FRIENDS"
+  | "FOLLOWER_OF_CREATOR"
   | "SELF_ONLY";
 
 export const uploadTikTokPost = async ({
   userId,
+  title,
+  autoAddMusic,
   caption,
   accessToken,
   filePath,
   privacyLevel,
   disableDuet,
   disableComment,
+  disableStitch,
   videoCoverTimestamp,
   postType,
+  brandOrganicToggle,
+  brandContentToggle,
 }: {
   userId: string;
+  title?: string;
+  autoAddMusic: boolean;
   caption: string;
   accessToken: string;
   filePath: string;
   privacyLevel: PrivacyLevel;
   disableDuet: boolean;
   disableComment: boolean;
+  disableStitch: boolean;
   videoCoverTimestamp: number;
   postType: "video" | "image";
+  brandOrganicToggle: boolean;
+  brandContentToggle: boolean;
 }) => {
   let logger = new Logger().with({
     function: "uploadTikTokPost",
@@ -142,6 +153,50 @@ export const uploadTikTokPost = async ({
     signedUrl,
   });
 
+  const url =
+    postType === "video"
+      ? "https://open.tiktokapis.com/v2/post/publish/video/init/"
+      : "https://open.tiktokapis.com/v2/post/publish/content/init/";
+
+  let body;
+  if (postType === "video") {
+    body = {
+      post_info: {
+        title: caption,
+        privacy_level: privacyLevel,
+        disable_duet: disableDuet,
+        disable_comment: disableComment,
+        disable_stitch: disableStitch,
+        video_cover_timestamp_ms: videoCoverTimestamp,
+        brand_organic_toggle: brandOrganicToggle,
+        brand_content_toggle: brandContentToggle,
+      },
+      source_info: {
+        source: "PULL_FROM_URL",
+        video_url: signedUrl,
+      },
+    };
+  } else if (postType === "image") {
+    body = {
+      media_type: "PHOTO",
+      post_mode: "DIRECT_POST",
+      post_info: {
+        title,
+        description: caption,
+        privacy_level: privacyLevel,
+        disable_comment: disableComment,
+        auto_add_music: autoAddMusic,
+        video_cover_timestamp_ms: videoCoverTimestamp,
+        brand_organic_toggle: brandOrganicToggle,
+        brand_content_toggle: brandContentToggle,
+      },
+      source_info: {
+        source: "PULL_FROM_URL",
+        video_url: signedUrl,
+      },
+    };
+  }
+
   const response = await fetch(
     "https://open.tiktokapis.com/v2/post/publish/video/init/",
     {
@@ -150,20 +205,7 @@ export const uploadTikTokPost = async ({
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json; charset=UTF-8",
       },
-      body: JSON.stringify({
-        post_info: {
-          title: caption,
-          privacy_level: privacyLevel,
-          disable_duet: disableDuet,
-          disable_comment: disableComment,
-          disable_stitch: false,
-          video_cover_timestamp_ms: videoCoverTimestamp,
-        },
-        source_info: {
-          source: "PULL_FROM_URL",
-          video_url: signedUrl,
-        },
-      }),
+      body: JSON.stringify(body),
     }
   );
 

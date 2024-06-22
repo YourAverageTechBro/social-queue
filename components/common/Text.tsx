@@ -4,9 +4,9 @@ const textStyles = cva("", {
   variants: {
     intent: {
       jumboTitle: "font-bold text-5xl md:text-6xl",
-      title: "font-bold text-3xl",
-      subtitle: "font-medium text-xl",
-      body: "font-medium text-md",
+      title: "font-extrabold text-3xl",
+      subtitle: "font-bold text-xl",
+      body: "text-md",
     },
     color: {
       black: "text-black",

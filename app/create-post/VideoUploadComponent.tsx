@@ -4,6 +4,7 @@ import { ChangeEvent, memo, useRef, useState } from "react";
 import { Button } from "@/components/common/Button";
 import {
   CheckCircleIcon,
+  InformationCircleIcon,
   TrashIcon,
   XCircleIcon,
 } from "@heroicons/react/24/solid";
@@ -20,21 +21,40 @@ import {
 } from "@/app/actions/socialMediaPosts";
 import Icons from "@/components/common/Icons";
 import TextInput from "@/components/common/TextInput";
-import { YoutubeVideoStatus } from "../actions/youtube";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useLogger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/client";
-import RadioGroups from "@/components/common/RadioGroup";
 import {
   checkTikTokPublishStatus,
+  PrivacyLevel,
   uploadTikTokPost,
   writeTikTokPostToSupabase,
 } from "../actions/tiktok";
 import Toggle from "@/components/common/Toggle";
+import Selector, { SelectorOption } from "@/components/common/Selector";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
+
+const privacyLevels: SelectorOption<PrivacyLevel>[] = [
+  {
+    name: "Public",
+    value: "PUBLIC_TO_EVERYONE",
+  },
+  {
+    name: "Only you",
+    value: "SELF_ONLY",
+  },
+  {
+    name: "Friends",
+    value: "MUTUAL_FOLLOW_FRIENDS",
+  },
+  {
+    name: "Followers",
+    value: "FOLLOWER_OF_CREATOR",
+  },
+];
 
 const MemoizedMedia = memo(
   function Media({ file, onRemove }: { file: File; onRemove: () => void }) {
@@ -79,6 +99,7 @@ export default function VideoUploadComponent({
 }) {
   const [disableDuet, setDisableDuet] = useState<boolean>(false);
   const [disableComment, setDisableComment] = useState<boolean>(false);
+  const [disableStitch, setDisableStitch] = useState<boolean>(false);
   const [privateYoutube, setPrivateYoutube] = useState<boolean>(false);
   const [selectedInstagramAccounts, setSelectedInstagramAccounts] = useState<
     Tables<"instagram-accounts">[]
@@ -115,7 +136,22 @@ export default function VideoUploadComponent({
   }>({});
   const [youtubeTitle, setYoutubeTitle] = useState<string>("");
   const [instagramCaption, setInstagramCaption] = useState<string>("");
+  const [tiktokAutoAddMusicToPhotos, setTiktokAutoAddMusicToPhotos] =
+    useState<boolean>(false);
   const [tiktokCaption, setTiktokCaption] = useState<string>("");
+  const [tiktokShouldDiscloseContent, setTiktokShouldDiscloseContent] =
+    useState<boolean>(false);
+  const [tiktokIsYourBrandPromotion, setTiktokIsYourBrandPromotion] =
+    useState<boolean>(false);
+  const [tiktokIsBrandedContent, setTiktokIsBrandedContent] =
+    useState<boolean>(false);
+  const [tiktokPrivacyLevel, setTiktokPrivacyLevel] = useState<
+    SelectorOption<PrivacyLevel>
+  >({
+    name: "Public",
+    value: "PUBLIC_TO_EVERYONE",
+  });
+  const [tiktokTitle, setTiktokTitle] = useState<string>("");
   let logger = useLogger();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -409,11 +445,15 @@ export default function VideoUploadComponent({
       uploadTikTokPost({
         userId,
         caption: tiktokCaption,
+        autoAddMusic: tiktokAutoAddMusicToPhotos,
+        brandOrganicToggle: tiktokIsYourBrandPromotion,
+        brandContentToggle: tiktokIsBrandedContent,
         accessToken: account.access_token,
         filePath,
         privacyLevel: "SELF_ONLY",
-        disableDuet: true,
-        disableComment: true,
+        disableDuet,
+        disableComment,
+        disableStitch,
         videoCoverTimestamp: 0,
         postType: file.type.includes("video") ? "video" : "image",
       }).then((publishId) =>
@@ -426,8 +466,8 @@ export default function VideoUploadComponent({
             caption: tiktokCaption,
             publishId,
             privacyLevel: "SELF_ONLY",
-            disableDuet: true,
-            disableComment: true,
+            disableDuet,
+            disableComment,
             videoCoverTimestamp: 0,
             parentSocialMediaPostId: socialMediaPostId,
           });
@@ -464,6 +504,8 @@ export default function VideoUploadComponent({
       });
     });
   };
+
+  const containsPhotos = files.some((file) => file.file.type.includes("image"));
 
   return (
     <div className={"flex flex-col justify-center items-center w-full px-2"}>
@@ -716,8 +758,7 @@ export default function VideoUploadComponent({
             accept="video/mp4, video/quicktime, image/jpeg"
           />
           <input type={"hidden"} name={"numberOfFiles"} value={files.length} />
-          {selectedInstagramAccounts.length + selectedTiktokAccounts.length >
-            0 && (
+          {selectedInstagramAccounts.length > 0 && (
             <div className="flex flex-col items-start gap-2 w-full">
               <Text
                 alignment={"left"}
@@ -771,6 +812,20 @@ export default function VideoUploadComponent({
                 text="TikTok Settings"
                 additionalStyles="mt-4"
               />
+              {containsPhotos && (
+                <TextInput
+                  title={"TikTok Photo Title"}
+                  name={"tiktokTitle"}
+                  placeholder={
+                    "Check out thecontentmarketingblueprint.com for help with social media marketing!"
+                  }
+                  value={tiktokTitle}
+                  setValue={setTiktokTitle}
+                  required={true}
+                  maxLength={90}
+                  type="text"
+                />
+              )}
               <TextArea
                 title={"Caption"}
                 name={"tiktokCaption"}
@@ -780,16 +835,110 @@ export default function VideoUploadComponent({
                 value={tiktokCaption}
                 setValue={setTiktokCaption}
               />
-              <Toggle
-                enabled={disableDuet}
-                setEnabled={setDisableDuet}
-                label="Disable Duet"
+              <Selector
+                title="Who can see this post"
+                options={privacyLevels}
+                selected={tiktokPrivacyLevel}
+                setSelected={setTiktokPrivacyLevel}
+                styleOverride="w-full"
               />
-              <Toggle
-                enabled={disableComment}
-                setEnabled={setDisableComment}
-                label="Disable Comment"
-              />
+
+              {!containsPhotos && (
+                <>
+                  <div className="flex items-center justify-between w-full">
+                    <Text intent="subtitle" text="Disable Duet" />
+                    <Toggle enabled={disableDuet} setEnabled={setDisableDuet} />
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <Text intent="subtitle" text="Disable Stitch" />
+                    <Toggle
+                      enabled={disableStitch}
+                      setEnabled={setDisableStitch}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center justify-between w-full">
+                <Text intent="subtitle" text="Disable Comments" />
+                <Toggle
+                  enabled={disableComment}
+                  setEnabled={setDisableComment}
+                />
+              </div>
+
+              {containsPhotos && (
+                <div className="flex items-center justify-between w-full">
+                  <Text intent="subtitle" text="Auto Add Music" />
+                  <Toggle
+                    enabled={tiktokAutoAddMusicToPhotos}
+                    setEnabled={setTiktokAutoAddMusicToPhotos}
+                  />
+                </div>
+              )}
+
+              <div className="w-full flex flex-col gap-2">
+                <div className="flex items-center justify-between w-full">
+                  <Text intent="subtitle" text="Disclose Video Content" />
+                  <Toggle
+                    enabled={tiktokShouldDiscloseContent}
+                    setEnabled={setTiktokShouldDiscloseContent}
+                  />
+                </div>
+                {tiktokShouldDiscloseContent && (
+                  <div className="rounded-lg p-4 bg-orange-400 flex items-center gap-2">
+                    <InformationCircleIcon className="h-6 w-6 text-white" />
+                    <Text text='Your video will be labeled "Promotional Content". This cannot be changed once your video is posted.' />
+                  </div>
+                )}
+                <Text
+                  alignment={"left"}
+                  text="Turn on to disclose that this video promotes goods or services in exchange for something of value. Your video could promote yourself, a third party, or both."
+                />
+              </div>
+              {tiktokShouldDiscloseContent && (
+                <>
+                  <div className="w-full flex flex-col gap-2">
+                    <div className="flex items-center justify-between w-full">
+                      <Text intent="subtitle" text="Your Brand" />
+                      <Toggle
+                        enabled={tiktokIsYourBrandPromotion}
+                        setEnabled={setTiktokIsYourBrandPromotion}
+                      />
+                    </div>
+                    <Text
+                      alignment={"left"}
+                      text="You are promoting yourself or your own business. This video will be classified as Business Organic."
+                    />
+                  </div>
+
+                  <div className="w-full flex flex-col gap-2">
+                    <div className="flex items-center justify-between w-full">
+                      <Text intent="subtitle" text="Branded Content" />
+                      <Toggle
+                        enabled={tiktokIsBrandedContent}
+                        setEnabled={setTiktokIsBrandedContent}
+                      />
+                    </div>
+                    <Text
+                      alignment={"left"}
+                      text="You are promoting another brand or a third party. This video will be classified as Branded Content."
+                    />
+                  </div>
+                </>
+              )}
+
+              <p className="text-md">
+                {" "}
+                By posting, you agree to{" "}
+                <a
+                  className="underline text-orange-600"
+                  href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
+                >
+                  {" "}
+                  TikTok's Music Usage Confirmation.{" "}
+                </a>
+              </p>
             </div>
           )}
           <Button
