@@ -95,6 +95,7 @@ export const postVideoToYoutube = async ({
       parent_social_media_post_id: parentSocialMediaPostId,
       title,
       user_id: userId,
+      youtube_channel_id: youtubeChannelId,
     });
   } catch (error) {
     logger.error(errorString, {

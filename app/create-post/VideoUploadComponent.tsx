@@ -367,6 +367,7 @@ export default function VideoUploadComponent({
                     parentSocialMediaPostId: socialMediaPostId,
                     caption: instagramCaption,
                     userId,
+                    instagramAccountId: account.id,
                   });
                   setInstagramAccountIdToProcessingState({
                     [account.instagram_business_account_id]: "posted",
@@ -424,6 +425,7 @@ export default function VideoUploadComponent({
                 parentSocialMediaPostId: socialMediaPostId,
                 caption: instagramCaption ?? "",
                 userId,
+                instagramAccountId: account.id,
               });
               setInstagramAccountIdToProcessingState({
                 [account.instagram_business_account_id]: "posted",
@@ -470,6 +472,7 @@ export default function VideoUploadComponent({
             disableComment,
             videoCoverTimestamp: 0,
             parentSocialMediaPostId: socialMediaPostId,
+            tiktokAccountId: account.id,
           });
           setTiktokAccountIdToProcessingState({
             [account.id]: "posted",

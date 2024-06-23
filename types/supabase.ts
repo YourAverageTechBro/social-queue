@@ -55,6 +55,7 @@ export type Database = {
           caption: string | null
           created_at: string
           id: string
+          instagram_account_id: string
           instagram_media_id: string
           parent_social_media_post_id: string
           user_id: string
@@ -63,6 +64,7 @@ export type Database = {
           caption?: string | null
           created_at?: string
           id?: string
+          instagram_account_id: string
           instagram_media_id: string
           parent_social_media_post_id: string
           user_id: string
@@ -71,11 +73,19 @@ export type Database = {
           caption?: string | null
           created_at?: string
           id?: string
+          instagram_account_id?: string
           instagram_media_id?: string
           parent_social_media_post_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "instagram-posts_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram-accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "instagram-posts_parent-social-media-post-id_fkey"
             columns: ["parent_social_media_post_id"]
@@ -201,6 +211,7 @@ export type Database = {
           privacy_level: string
           publicaly_available_post_id: string | null
           publish_id: string
+          tiktok_account_id: string
           user_id: string
           video_cover_timestamp_ms: number
         }
@@ -215,6 +226,7 @@ export type Database = {
           privacy_level: string
           publicaly_available_post_id?: string | null
           publish_id: string
+          tiktok_account_id: string
           user_id: string
           video_cover_timestamp_ms: number
         }
@@ -229,6 +241,7 @@ export type Database = {
           privacy_level?: string
           publicaly_available_post_id?: string | null
           publish_id?: string
+          tiktok_account_id?: string
           user_id?: string
           video_cover_timestamp_ms?: number
         }
@@ -238,6 +251,13 @@ export type Database = {
             columns: ["parent_social_media_post_id"]
             isOneToOne: false
             referencedRelation: "social-media-posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tiktok-posts_tiktok_account_id_fkey"
+            columns: ["tiktok_account_id"]
+            isOneToOne: false
+            referencedRelation: "tiktok-accounts"
             referencedColumns: ["id"]
           },
           {
@@ -291,6 +311,7 @@ export type Database = {
           parent_social_media_post_id: string
           title: string
           user_id: string
+          youtube_channel_id: string
         }
         Insert: {
           created_at?: string
@@ -298,6 +319,7 @@ export type Database = {
           parent_social_media_post_id: string
           title: string
           user_id?: string
+          youtube_channel_id: string
         }
         Update: {
           created_at?: string
@@ -305,6 +327,7 @@ export type Database = {
           parent_social_media_post_id?: string
           title?: string
           user_id?: string
+          youtube_channel_id?: string
         }
         Relationships: [
           {
@@ -319,6 +342,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "youtube-posts_youtube_channel_id_fkey"
+            columns: ["youtube_channel_id"]
+            isOneToOne: false
+            referencedRelation: "youtube-channels"
             referencedColumns: ["id"]
           },
         ]
