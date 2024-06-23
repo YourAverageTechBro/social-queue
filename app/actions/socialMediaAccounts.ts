@@ -4,6 +4,7 @@ import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import { Logger } from "next-axiom";
 import { fetchCreatorInfo } from "./tiktok";
+import { Tables } from "@/types/supabase";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -74,12 +75,16 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
 
   const tiktokAccountsWithSignedUrl = tiktokAccounts
     ? await Promise.all(
-        tiktokAccounts?.map(async (account) => {
-          const creatorInfo = await fetchCreatorInfo(account.access_token);
+        tiktokAccounts?.map(async (account): Promise<TikTokAccount> => {
+          const { data, errorMessage } = await fetchCreatorInfo(
+            account.access_token
+          );
           return {
             ...account,
-            profile_picture_file_path: creatorInfo?.creator_avatar_url ?? "",
-            account_name: creatorInfo?.creator_nickname ?? "",
+            profile_picture_file_path: data?.creator_avatar_url ?? "",
+            account_name: data?.creator_nickname ?? "",
+            max_video_duration: data?.max_video_post_duration_sec ?? 0,
+            error: errorMessage,
           };
         })
       )
@@ -90,4 +95,11 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
     youtubeChannels: youtubeChannelsWithSignedUrl,
     tiktokAccounts: tiktokAccountsWithSignedUrl,
   };
+};
+
+export type TikTokAccount = Tables<"tiktok-accounts"> & {
+  profile_picture_file_path: string;
+  account_name: string;
+  max_video_duration: number;
+  error: string | undefined;
 };

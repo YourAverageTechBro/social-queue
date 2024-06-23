@@ -33,6 +33,7 @@ import {
 } from "../actions/tiktok";
 import Toggle from "@/components/common/Toggle";
 import Selector, { SelectorOption } from "@/components/common/Selector";
+import { TikTokAccount } from "../actions/socialMediaAccounts";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -90,10 +91,7 @@ export default function VideoUploadComponent({
   userId,
 }: {
   instagramAccounts: Tables<"instagram-accounts">[];
-  tiktokAccounts: (Tables<"tiktok-accounts"> & {
-    profile_picture_file_path: string;
-    account_name: string;
-  })[];
+  tiktokAccounts: TikTokAccount[];
   youtubeChannels: Tables<"youtube-channels">[];
   userId: string;
 }) {
@@ -105,10 +103,7 @@ export default function VideoUploadComponent({
     Tables<"instagram-accounts">[]
   >([]);
   const [selectedTiktokAccounts, setSelectedTiktokAccounts] = useState<
-    (Tables<"tiktok-accounts"> & {
-      profile_picture_file_path: string;
-      account_name: string;
-    })[]
+    TikTokAccount[]
   >([]);
   const [selectedYoutubeChannels, setSelectedYoutubeChannels] = useState<
     Tables<"youtube-channels">[]
@@ -127,7 +122,14 @@ export default function VideoUploadComponent({
     setTiktokAccountIdToProcessingState,
   ] = useState<{
     [key: string]: string;
-  }>({});
+  }>(
+    tiktokAccounts.reduce((acc, account) => {
+      if (account.error) {
+        acc[account.id] = account.error;
+      }
+      return acc;
+    }, {} as { [key: string]: string })
+  );
   const [
     youtubeChannelIdToProcessingState,
     setYoutubeChannelIdToProcessingState,
