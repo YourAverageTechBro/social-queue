@@ -527,7 +527,8 @@ export const fetchCreatorInfo = async (accessToken: string) => {
     await logger.flush();
   }
 
-  return { data, errorMessage: generateErrorMessage(error.code) };
+  // return { data, errorMessage: generateErrorMessage(error.code) };
+  return { data, errorMessage: "error: this is a test error" };
 };
 
 const generateErrorMessage = (error: TikTokCreatorInfoErrorCode) => {
