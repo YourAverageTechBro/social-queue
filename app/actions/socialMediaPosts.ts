@@ -404,11 +404,13 @@ export const saveInstagramId = async ({
   parentSocialMediaPostId,
   caption,
   userId,
+  instagramAccountId,
 }: {
   instagramMediaId: string;
   parentSocialMediaPostId: string;
   caption: string;
   userId: string;
+  instagramAccountId: string;
 }) => {
   const logger = new Logger().with({
     function: "saveInstagramId",
@@ -422,6 +424,7 @@ export const saveInstagramId = async ({
     parent_social_media_post_id: parentSocialMediaPostId,
     caption,
     user_id: userId,
+    instagram_account_id: instagramAccountId,
   });
   if (error) {
     logger.error(errorString, error);

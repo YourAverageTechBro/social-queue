@@ -242,6 +242,7 @@ export const writeTikTokPostToSupabase = async ({
   disableComment,
   disableDuet,
   videoCoverTimestamp,
+  tiktokAccountId,
 }: {
   userId: string;
   publishId: string;
@@ -251,6 +252,7 @@ export const writeTikTokPostToSupabase = async ({
   disableComment: boolean;
   disableDuet: boolean;
   videoCoverTimestamp: number;
+  tiktokAccountId: string;
 }) => {
   const logger = new Logger().with({
     function: "writeTikTokPostToSupabase",
@@ -274,6 +276,7 @@ export const writeTikTokPostToSupabase = async ({
     disable_duet: disableDuet,
     disable_stitch: false,
     video_cover_timestamp_ms: videoCoverTimestamp,
+    tiktok_account_id: tiktokAccountId,
   });
   if (supabaseError) {
     logger.error(errorString, supabaseError);
