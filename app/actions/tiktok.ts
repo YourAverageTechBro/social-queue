@@ -524,8 +524,32 @@ export const fetchCreatorInfo = async (accessToken: string) => {
   const { data, error } = (await response.json()) as TikTokCreatorInfoResponse;
   if (error.code !== "ok") {
     logger.error(errorString, error);
-    throw new Error(`Failed to fetch creator info from TikTok`);
+    await logger.flush();
   }
 
-  return data;
+  // return { data, errorMessage: generateErrorMessage(error.code) };
+  return { data, errorMessage: "error: this is a test error" };
+};
+
+const generateErrorMessage = (error: TikTokCreatorInfoErrorCode) => {
+  switch (error) {
+    case "ok":
+      return;
+    case "spam_risk_too_many_posts":
+      return "error: You've posted too many times recently. Please try again later.";
+    case "spam_risk_user_banned_from_posting":
+      return "error: You've been banned from posting. Please contact TikTok support if you believe this is an error.";
+    case "reached_active_user_cap":
+      return "error: You've reached the maximum number of active posts. Please try again later.";
+    case "unaudited_client_can_only_post_to_private_accounts":
+      return "error: You can only post to private accounts. Please try again later.";
+    case "access_token_invalid":
+      return "error: Your access token is invalid. Reconnect your account and try again.";
+    case "scope_not_authorized":
+      return "error: Your scope is not authorized. Reconnect your account and try again.";
+    case "rate_limit_exceeded":
+      return "error: You've posted too many times recently. Please try again later.";
+    case "internal_error":
+      return "error: It seems like TikTok is having some issues. Please try again later.";
+  }
 };

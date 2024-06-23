@@ -19,6 +19,7 @@ import { deleteYoutubeChannel } from "../actions/youtube";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import Modal from "@/components/common/Modal";
 import { deleteTikTokAccount } from "../actions/tiktok";
+import { TikTokAccount } from "../actions/socialMediaAccounts";
 
 export default function Dashboard({
   userId,
@@ -29,10 +30,7 @@ export default function Dashboard({
 }: {
   userId: string;
   instagramAccounts: Tables<"instagram-accounts">[];
-  tiktokAccounts: (Tables<"tiktok-accounts"> & {
-    profile_picture_file_path: string;
-    account_name: string;
-  })[];
+  tiktokAccounts: TikTokAccount[];
   youtubeChannels: Tables<"youtube-channels">[];
   authError: string;
 }) {
@@ -62,12 +60,8 @@ export default function Dashboard({
   const [openConfirmDeleteModal, setOpenConfirmDeleteModal] = useState(false);
   const [instagramAccountToDelete, setInstagramAccountToDelete] =
     useState<Tables<"instagram-accounts">>();
-  const [tiktokAccountToDelete, setTiktokAccountToDelete] = useState<
-    Tables<"tiktok-accounts"> & {
-      profile_picture_file_path: string;
-      account_name: string;
-    }
-  >();
+  const [tiktokAccountToDelete, setTiktokAccountToDelete] =
+    useState<TikTokAccount>();
   const [youtubeChannelToDelete, setYoutubeChannelToDelete] =
     useState<Tables<"youtube-channels">>();
 
@@ -122,12 +116,7 @@ export default function Dashboard({
 
   const constructSocialAccountBlock = (
     instagramAccountToDelete: Tables<"instagram-accounts"> | undefined,
-    tiktokAccountToDelete:
-      | (Tables<"tiktok-accounts"> & {
-          profile_picture_file_path: string;
-          account_name: string;
-        })
-      | undefined,
+    tiktokAccountToDelete: TikTokAccount | undefined,
     youtubeChannelToDelete: Tables<"youtube-channels"> | undefined
   ) => {
     if (instagramAccountToDelete) {

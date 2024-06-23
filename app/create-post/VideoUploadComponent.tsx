@@ -33,6 +33,7 @@ import {
 } from "../actions/tiktok";
 import Toggle from "@/components/common/Toggle";
 import Selector, { SelectorOption } from "@/components/common/Selector";
+import { TikTokAccount } from "../actions/socialMediaAccounts";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -90,10 +91,7 @@ export default function VideoUploadComponent({
   userId,
 }: {
   instagramAccounts: Tables<"instagram-accounts">[];
-  tiktokAccounts: (Tables<"tiktok-accounts"> & {
-    profile_picture_file_path: string;
-    account_name: string;
-  })[];
+  tiktokAccounts: TikTokAccount[];
   youtubeChannels: Tables<"youtube-channels">[];
   userId: string;
 }) {
@@ -105,10 +103,7 @@ export default function VideoUploadComponent({
     Tables<"instagram-accounts">[]
   >([]);
   const [selectedTiktokAccounts, setSelectedTiktokAccounts] = useState<
-    (Tables<"tiktok-accounts"> & {
-      profile_picture_file_path: string;
-      account_name: string;
-    })[]
+    TikTokAccount[]
   >([]);
   const [selectedYoutubeChannels, setSelectedYoutubeChannels] = useState<
     Tables<"youtube-channels">[]
@@ -127,7 +122,14 @@ export default function VideoUploadComponent({
     setTiktokAccountIdToProcessingState,
   ] = useState<{
     [key: string]: string;
-  }>({});
+  }>(
+    tiktokAccounts.reduce((acc, account) => {
+      if (account.error) {
+        acc[account.id] = account.error;
+      }
+      return acc;
+    }, {} as { [key: string]: string })
+  );
   const [
     youtubeChannelIdToProcessingState,
     setYoutubeChannelIdToProcessingState,
@@ -548,13 +550,13 @@ export default function VideoUploadComponent({
         <div className={"flex flex-wrap justify-center items-center gap-2"}>
           {instagramAccounts.map((account) => (
             <button
-              className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2 ${
+              className={`p-4 rounded-lg bg-gray-800 flex flex-col justify-center items-center gap-2 ${
                 selectedInstagramAccounts.find(
                   (acc) =>
                     acc.instagram_business_account_id ===
                     account.instagram_business_account_id
                 ) && "border-2 border-orange-500"
-              }`}
+              } min-h-32`}
               onClick={() =>
                 setSelectedInstagramAccounts((prev) => {
                   if (
@@ -630,10 +632,14 @@ export default function VideoUploadComponent({
           ))}
           {tiktokAccounts.map((account) => (
             <button
-              className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2 ${
+              className={`p-4 rounded-lg bg-gray-800 flex flex-col justify-center items-center gap-2 ${
                 selectedTiktokAccounts.find((acc) => acc.id === account.id) &&
                 "border-2 border-orange-500"
-              }`}
+              } disabled:opacity-50 min-h-32`}
+              disabled={
+                tiktokAccounts.find((acc) => acc.id === account.id)?.error !==
+                undefined
+              }
               onClick={() =>
                 setSelectedTiktokAccounts((prev) => {
                   if (prev.find((acc) => acc.id === account.id)) {
@@ -688,10 +694,10 @@ export default function VideoUploadComponent({
           ))}
           {youtubeChannels.map((channel) => (
             <button
-              className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2 ${
+              className={`p-4 rounded-lg bg-gray-800 flex flex-col justify-center items-center gap-2 ${
                 selectedYoutubeChannels.find((ch) => ch.id === channel.id) &&
                 "border-2 border-orange-500"
-              }`}
+              } min-h-32`}
               onClick={() =>
                 setSelectedYoutubeChannels((prev) => {
                   if (prev.find((acc) => acc.id === channel.id)) {
