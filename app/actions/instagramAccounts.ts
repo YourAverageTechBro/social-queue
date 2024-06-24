@@ -4,6 +4,7 @@ import { errorString } from "@/utils/logging";
 import { FacebookGraphError } from "@/utils/facebookSdk";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { fetchAccessTokenForInstagramBusinessAccountId } from "./socialMediaPosts";
 
 export const saveInstagramAccount = async (prevState: any, data: FormData) => {
   const appScopedUserId = data.get("appScopedUserId") as string;
@@ -266,4 +267,90 @@ const fetchLongLivedAccessToken = async (shortLivedAccessToken: string) => {
   return {
     longLivedAccessToken: data.access_token,
   };
+};
+
+const GRAPH_API_BASE_URL = `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}`;
+
+export const buildGraphAPIURL = ({
+  path,
+  searchParams,
+  accessToken,
+}: {
+  path: string;
+  searchParams: Record<string, string | null | undefined>;
+  accessToken?: string;
+}): string => {
+  const url = new URL(path, GRAPH_API_BASE_URL);
+
+  Object.keys(searchParams).forEach((key) => {
+    if (!searchParams[key]) {
+      delete searchParams[key];
+    }
+  });
+
+  url.search = new URLSearchParams(
+    searchParams as Record<string, string>
+  ).toString();
+
+  if (accessToken) {
+    url.searchParams.append("access_token", accessToken);
+  }
+
+  return url.toString();
+};
+
+export const fetchInstagramPublishingRateLimit = async ({
+  instagramBusinessAccountId,
+  userId,
+}: {
+  instagramBusinessAccountId: string;
+  userId: string;
+}) => {
+  const logger = new Logger().with({
+    function: "fetchInstagramPublishingRateLimit",
+    instagramBusinessAccountId,
+    userId,
+  });
+  const accessToken = await fetchAccessTokenForInstagramBusinessAccountId({
+    instagramBusinessAccountId,
+    userId,
+  });
+  const graphUrl = buildGraphAPIURL({
+    path: `/${instagramBusinessAccountId}/content_publishing_limit`,
+    searchParams: { fields: "config,quota_usage" },
+    accessToken,
+  });
+
+  const resp = await fetch(graphUrl, {
+    method: "GET",
+  });
+
+  const { error: facebookGraphError, data } = (await resp.json()) as {
+    error: FacebookGraphError;
+    data: {
+      config: {
+        quota_total: number;
+      };
+      quota_usage: number;
+    }[];
+  };
+
+  logger.info("Fetched instagram rate limit", {
+    ...data,
+    ...facebookGraphError,
+  });
+  if (facebookGraphError) {
+    logger.error(errorString, { ...facebookGraphError });
+    await logger.flush();
+    throw new Error("Failed creating carousel container");
+  }
+  if (data.length === 0) {
+    logger.error(errorString, {
+      error: "No data found in response from Facebook Graph API",
+    });
+    await logger.flush();
+    throw new Error("Failed creating carousel container");
+  }
+  await logger.flush();
+  return data[0];
 };
