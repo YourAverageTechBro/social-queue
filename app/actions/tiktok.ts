@@ -563,9 +563,7 @@ export const refreshTikTokAccessTokens = async () => {
   const logger = new Logger().with({
     function: "refreshTikTokAccessTokens",
   });
-  const { data, error } = await supabase
-    .from("tiktok-accounts")
-    .select("refresh_token");
+  const { data, error } = await supabase.from("tiktok-accounts").select("*");
   logger.info(startingFunctionString);
   if (error) {
     logger.error(errorString, error);
@@ -580,7 +578,8 @@ export const refreshTikTokAccessTokens = async () => {
     throw error;
   }
   for (let i = 0; i < data.length; i++) {
-    await refreshTikTokAccessToken(data[0].refresh_token);
+    const { refresh_token, id } = data[0];
+    await refreshTikTokAccessToken({ refreshToken: refresh_token, id });
   }
 };
 
@@ -596,40 +595,26 @@ type TikTokRefreshTokenResponse = {
   error_description?: string;
 };
 
-const refreshTikTokAccessToken = async (accessToken: string) => {
+const refreshTikTokAccessToken = async ({
+  refreshToken,
+  id,
+}: {
+  refreshToken: string;
+  id: string;
+}) => {
   const logger = new Logger().with({
     function: "refreshTikTokAccessToken",
-    accessToken,
+    refreshToken,
+    id,
   });
   logger.info(startingFunctionString);
   const supabase = createClient();
-  const { data, error: fetchUserError } = await supabase
-    .from("tiktok-accounts")
-    .select()
-    .eq("access_token", accessToken);
-  if (fetchUserError) {
-    logger.error(errorString, fetchUserError);
-    await logger.flush();
-    throw fetchUserError;
-  }
-  if (data.length === 0) {
-    const errorString = "No data found for access token";
-    logger.error(errorString, { error: errorString });
-    await logger.flush();
-    throw Error(errorString);
-  }
-  if (data.length > 1) {
-    const errorString = "More than one account found for access token";
-    logger.error(errorString, { error: errorString });
-    await logger.flush();
-  }
-  const account = data[0];
   const response = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: `client_key=${process.env.TIKTOK_CLIENT_KEY}&client_secret=${process.env.TIKTOK_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${account.refresh_token}`,
+    body: `client_key=${process.env.TIKTOK_CLIENT_KEY}&client_secret=${process.env.TIKTOK_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${refreshToken}`,
   });
   const { error, error_description, refresh_token, access_token } =
     (await response.json()) as TikTokRefreshTokenResponse;
@@ -644,7 +629,7 @@ const refreshTikTokAccessToken = async (accessToken: string) => {
       refresh_token,
       access_token,
     })
-    .eq("id", account.id);
+    .eq("id", id);
   if (updateError) {
     logger.error(errorString, updateError);
     await logger.flush();
