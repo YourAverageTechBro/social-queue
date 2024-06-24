@@ -5,6 +5,7 @@ import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import { FacebookGraphError } from "@/utils/facebookSdk";
 import { getSignedUrl } from "@/utils/supabase/storage";
+import { buildGraphAPIURL } from "./instagramAccounts";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -356,7 +357,7 @@ export const publishInstagramMediaContainer = async ({
   return id;
 };
 
-const fetchAccessTokenForInstagramBusinessAccountId = async ({
+export const fetchAccessTokenForInstagramBusinessAccountId = async ({
   instagramBusinessAccountId,
   userId,
 }: {
@@ -433,34 +434,4 @@ export const saveInstagramId = async ({
   }
   logger.info("Instagram media id saved");
   await logger.flush();
-};
-
-const GRAPH_API_BASE_URL = `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}`;
-
-const buildGraphAPIURL = ({
-  path,
-  searchParams,
-  accessToken,
-}: {
-  path: string;
-  searchParams: Record<string, string | null | undefined>;
-  accessToken?: string;
-}): string => {
-  const url = new URL(path, GRAPH_API_BASE_URL);
-
-  Object.keys(searchParams).forEach((key) => {
-    if (!searchParams[key]) {
-      delete searchParams[key];
-    }
-  });
-
-  url.search = new URLSearchParams(
-    searchParams as Record<string, string>
-  ).toString();
-
-  if (accessToken) {
-    url.searchParams.append("access_token", accessToken);
-  }
-
-  return url.toString();
 };

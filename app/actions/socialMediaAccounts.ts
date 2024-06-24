@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { Logger } from "next-axiom";
 import { fetchCreatorInfo } from "./tiktok";
 import { Tables } from "@/types/supabase";
+import { fetchInstagramPublishingRateLimit } from "./instagramAccounts";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -45,48 +46,77 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
 
   const instagramAccountsWithSignedUrl = instagramAccounts
     ? await Promise.all(
-        instagramAccounts?.map(async (account) => {
-          const supabase = createClient();
-          const { data } = await supabase.storage
-            .from(bucketName)
-            .createSignedUrl(account.picture_file_path, 60 * 60 * 24 * 300);
-          return {
-            ...account,
-            picture_file_path: data?.signedUrl ?? "",
-          };
-        })
+        instagramAccounts?.map(
+          async (account): Promise<InstagramAccountWithVideoRestrictions> => {
+            const supabase = createClient();
+            const { data } = await supabase.storage
+              .from(bucketName)
+              .createSignedUrl(account.picture_file_path, 60 * 60 * 24 * 300);
+            const {
+              config: { quota_total },
+              quota_usage,
+            } = await fetchInstagramPublishingRateLimit({
+              instagramBusinessAccountId: account.instagram_business_account_id,
+              userId,
+            });
+            return {
+              ...account,
+              picture_file_path: data?.signedUrl ?? "",
+              min_video_duration: 3,
+              max_video_duration: 90,
+              max_video_size: 1024 * 1024 * 1024,
+              error:
+                quota_usage === quota_total
+                  ? "You've posted too many times recently. Please try again later."
+                  : "",
+            };
+          }
+        )
       )
     : [];
 
   const youtubeChannelsWithSignedUrl = youtubeChannels
     ? await Promise.all(
-        youtubeChannels?.map(async (channel) => {
-          const supabase = createClient();
-          const { data } = await supabase.storage
-            .from(bucketName)
-            .createSignedUrl(channel.profile_picture_path, 60 * 60 * 24 * 300);
-          return {
-            ...channel,
-            profile_picture_path: data?.signedUrl ?? "",
-          };
-        })
+        youtubeChannels?.map(
+          async (channel): Promise<YoutubeChannelWithVideoRestrictions> => {
+            const supabase = createClient();
+            const { data } = await supabase.storage
+              .from(bucketName)
+              .createSignedUrl(
+                channel.profile_picture_path,
+                60 * 60 * 24 * 300
+              );
+            return {
+              ...channel,
+              profile_picture_path: data?.signedUrl ?? "",
+              min_video_duration: 3,
+              max_video_duration: 60,
+              max_video_size: 1024 * 1024 * 1024 * 256,
+              error: "",
+            };
+          }
+        )
       )
     : [];
 
   const tiktokAccountsWithSignedUrl = tiktokAccounts
     ? await Promise.all(
-        tiktokAccounts?.map(async (account): Promise<TikTokAccount> => {
-          const { data, errorMessage } = await fetchCreatorInfo(
-            account.access_token
-          );
-          return {
-            ...account,
-            profile_picture_file_path: data?.creator_avatar_url ?? "",
-            account_name: data?.creator_nickname ?? "",
-            max_video_duration: data?.max_video_post_duration_sec ?? 0,
-            error: errorMessage,
-          };
-        })
+        tiktokAccounts?.map(
+          async (account): Promise<TikTokAccountWithVideoRestrictions> => {
+            const { data, errorMessage } = await fetchCreatorInfo(
+              account.access_token
+            );
+            return {
+              ...account,
+              profile_picture_file_path: data?.creator_avatar_url ?? "",
+              account_name: data?.creator_nickname ?? "",
+              min_video_duration: 3,
+              max_video_duration: data?.max_video_post_duration_sec ?? 0,
+              max_video_size: 1024 * 1024 * 1024 * 4,
+              error: errorMessage,
+            };
+          }
+        )
       )
     : [];
 
@@ -97,9 +127,20 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
   };
 };
 
-export type TikTokAccount = Tables<"tiktok-accounts"> & {
+export type TikTokAccountWithVideoRestrictions = Tables<"tiktok-accounts"> & {
   profile_picture_file_path: string;
   account_name: string;
+} & VideoPostingRestrictions;
+
+export type YoutubeChannelWithVideoRestrictions = Tables<"youtube-channels"> &
+  VideoPostingRestrictions;
+
+export type InstagramAccountWithVideoRestrictions =
+  Tables<"instagram-accounts"> & VideoPostingRestrictions;
+
+type VideoPostingRestrictions = {
+  min_video_duration: number;
   max_video_duration: number;
+  max_video_size: number;
   error: string | undefined;
 };

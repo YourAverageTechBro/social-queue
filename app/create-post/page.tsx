@@ -1,7 +1,7 @@
-import VideoUploadComponent from "@/app/create-post/VideoUploadComponent";
 import { getUser } from "@/app/actions/user";
 import { redirect } from "next/navigation";
 import { fetchUserConnectSocialMediaAccounts } from "../actions/socialMediaAccounts";
+import VideoUploadComponent from "./VideoUploadComponent";
 
 export const maxDuration = 300;
 

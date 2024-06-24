@@ -13,7 +13,6 @@ import Text from "@/components/common/Text";
 import TextArea from "@/components/common/TextArea";
 import {
   checkInstagramContainerStatus,
-  createInstagramCarouselContainer,
   createInstagramContainer,
   createSocialMediaPost,
   publishInstagramMediaContainer,
@@ -33,7 +32,11 @@ import {
 } from "../actions/tiktok";
 import Toggle from "@/components/common/Toggle";
 import Selector, { SelectorOption } from "@/components/common/Selector";
-import { TikTokAccount } from "../actions/socialMediaAccounts";
+import {
+  TikTokAccountWithVideoRestrictions,
+  InstagramAccountWithVideoRestrictions,
+  YoutubeChannelWithVideoRestrictions,
+} from "../actions/socialMediaAccounts";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -92,9 +95,9 @@ export default function VideoUploadComponent({
   youtubeChannels,
   userId,
 }: {
-  instagramAccounts: Tables<"instagram-accounts">[];
-  tiktokAccounts: TikTokAccount[];
-  youtubeChannels: Tables<"youtube-channels">[];
+  instagramAccounts: InstagramAccountWithVideoRestrictions[];
+  tiktokAccounts: TikTokAccountWithVideoRestrictions[];
+  youtubeChannels: YoutubeChannelWithVideoRestrictions[];
   userId: string;
 }) {
   const [disableDuet, setDisableDuet] = useState<boolean>(false);
@@ -102,17 +105,15 @@ export default function VideoUploadComponent({
   const [disableStitch, setDisableStitch] = useState<boolean>(false);
   const [privateYoutube, setPrivateYoutube] = useState<boolean>(false);
   const [selectedInstagramAccounts, setSelectedInstagramAccounts] = useState<
-    Tables<"instagram-accounts">[]
+    InstagramAccountWithVideoRestrictions[]
   >([]);
   const [selectedTiktokAccounts, setSelectedTiktokAccounts] = useState<
-    TikTokAccount[]
+    TikTokAccountWithVideoRestrictions[]
   >([]);
   const [selectedYoutubeChannels, setSelectedYoutubeChannels] = useState<
-    Tables<"youtube-channels">[]
+    YoutubeChannelWithVideoRestrictions[]
   >([]);
-  const [files, setFiles] = useState<{ file: File; errorMessage: string }[]>(
-    []
-  );
+  const [files, setFiles] = useState<File[]>([]);
   const [
     instagramAccountIdToProcessingState,
     setInstagramAccountIdToProcessingState,
@@ -160,74 +161,10 @@ export default function VideoUploadComponent({
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const disableSocialAccountsFromFiles = (files: FileList) => {
-    if (files.length > 1) {
-      const updatedYoutubeAccountStates = {
-        ...youtubeChannelIdToProcessingState,
-      };
-      youtubeChannels.forEach((channel) => {
-        updatedYoutubeAccountStates[channel.id] = {
-          state: "disabled",
-          message: "Cannot upload multiple files to a Youtube channel",
-        };
-      });
-      setYoutubeChannelIdToProcessingState(updatedYoutubeAccountStates);
-    }
-
-    const containsImages = Array.from(files).some((file) =>
-      file.type.startsWith("image/")
-    );
-    if (containsImages) {
-      const updatedYoutubeAccountStates = {
-        ...youtubeChannelIdToProcessingState,
-      };
-      youtubeChannels.forEach((channel) => {
-        updatedYoutubeAccountStates[channel.id] = {
-          state: "disabled",
-          message: "Cannot upload images to a Youtube channel",
-        };
-      });
-      setYoutubeChannelIdToProcessingState(updatedYoutubeAccountStates);
-    }
-    const hasMixedFiles =
-      Array.from(files).some((file) => file.type.startsWith("image/")) &&
-      Array.from(files).some((file) => file.type.startsWith("video/"));
-
-    if (hasMixedFiles) {
-      const updatedTiktokAccountStates = {
-        ...tiktokAccountIdToProcessingState,
-      };
-      tiktokAccounts.forEach((account) => {
-        updatedTiktokAccountStates[account.id] = {
-          state: "disabled",
-          message: "Cannot upload a mix of images and videos to TikTok",
-        };
-      });
-      setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
-    }
-
-    if (
-      Array.from(files).filter((file) => file.type.startsWith("video/"))
-        .length > 1
-    ) {
-      const updatedTiktokAccountStates = {
-        ...tiktokAccountIdToProcessingState,
-      };
-      tiktokAccounts.forEach((account) => {
-        updatedTiktokAccountStates[account.id] = {
-          state: "disabled",
-          message: "Cannot upload more than 1 video to TikTok",
-        };
-      });
-      setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
-    }
-  };
-
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
     if (fileInputRef.current?.files) {
       const files = fileInputRef.current?.files;
-      disableSocialAccountsFromFiles(files);
       for (let i = 0; i < files.length; i++) {
         const selectedFile = files[i];
         if (
@@ -236,16 +173,6 @@ export default function VideoUploadComponent({
         ) {
           // Validate file size (1GB max)
           const maxSizeInBytes = 1024 * 1024 * 1024;
-          if (selectedFile.size > maxSizeInBytes) {
-            setFiles((prev) => [
-              ...prev,
-              {
-                file: selectedFile,
-                errorMessage: "File error: Video file size exceeds 1GB.",
-              },
-            ]);
-            return;
-          }
 
           // Validate file duration (3 seconds min, 15 minutes max)
           const video = document.createElement("video");
@@ -253,44 +180,27 @@ export default function VideoUploadComponent({
           video.onloadedmetadata = () => {
             window.URL.revokeObjectURL(video.src);
             const duration = video.duration;
-            if (duration < 3 || duration > 15 * 60) {
-              setFiles((prev) => [
-                ...prev,
-                {
-                  file: selectedFile,
-                  errorMessage:
-                    "File error: Video duration must be between 3 seconds and 15 minutes.",
-                },
-              ]);
-            } else {
-              disableAccountsBasedOnVideoDuration(duration);
-              setFiles((prev) => [
-                ...prev,
-                { file: selectedFile, errorMessage: "" },
-              ]);
-            }
+            disableSocialMediaAccountsIfNecessary({
+              duration,
+              videoSize: selectedFile.size,
+            });
+            setFiles((prev) => [...prev, selectedFile]);
           };
           video.src = URL.createObjectURL(selectedFile);
-        } else if (selectedFile.type === "image/jpeg") {
-          // Validate file size (8MB max)
-          const maxSizeInBytes = 1024 * 1024 * 8;
-          if (selectedFile.size > maxSizeInBytes) {
-            setFiles((prev) => [
-              ...prev,
-              {
-                file: selectedFile,
-                errorMessage: "File error: Image file size exceeds 9MB.",
-              },
-            ]);
-            return;
-          }
-          setFiles((prev) => [
-            ...prev,
-            { file: selectedFile, errorMessage: "" },
-          ]);
         }
       }
     }
+  };
+
+  const disableSocialMediaAccountsIfNecessary = ({
+    duration,
+    videoSize,
+  }: {
+    duration: number;
+    videoSize: number;
+  }) => {
+    disableAccountsBasedOnVideoDuration(duration);
+    disableAccountsBasedOnVideoSize(videoSize);
   };
 
   const disableAccountsBasedOnVideoDuration = (duration: number) => {
@@ -303,9 +213,91 @@ export default function VideoUploadComponent({
           state: "disabled",
           message: `Cannot upload video longer than ${account.max_video_duration} seconds to this account`,
         };
+      } else if (duration < account.min_video_duration) {
+        updatedTiktokAccountStates[account.id] = {
+          state: "disabled",
+          message: `Cannot upload video shorter than ${account.max_video_duration} seconds to this account`,
+        };
       }
     });
     setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
+
+    const updatedInstagramAccountStates = {
+      ...instagramAccountIdToProcessingState,
+    };
+    instagramAccounts.forEach((account) => {
+      if (duration > account.max_video_duration) {
+        updatedInstagramAccountStates[account.instagram_business_account_id] = {
+          state: "disabled",
+          message: `Cannot upload video longer than ${account.max_video_duration} seconds to this account`,
+        };
+      } else if (duration < account.min_video_duration) {
+        updatedInstagramAccountStates[account.instagram_business_account_id] = {
+          state: "disabled",
+          message: `Cannot upload video shorter than ${account.min_video_duration} seconds to this account`,
+        };
+      }
+    });
+    setInstagramAccountIdToProcessingState(updatedInstagramAccountStates);
+
+    const updatedYoutubeChannelStates = {
+      ...youtubeChannelIdToProcessingState,
+    };
+    youtubeChannels.forEach((channel) => {
+      if (duration > channel.max_video_duration) {
+        updatedYoutubeChannelStates[channel.id] = {
+          state: "disabled",
+          message: `Cannot upload video longer than ${channel.max_video_duration} seconds to this channel`,
+        };
+      } else if (duration < channel.min_video_duration) {
+        updatedYoutubeChannelStates[channel.id] = {
+          state: "disabled",
+          message: `Cannot upload video shorter than ${channel.min_video_duration} seconds to this channel`,
+        };
+      }
+    });
+    setYoutubeChannelIdToProcessingState(updatedYoutubeChannelStates);
+  };
+
+  const disableAccountsBasedOnVideoSize = (size: number) => {
+    const updatedTiktokAccountStates = {
+      ...tiktokAccountIdToProcessingState,
+    };
+    tiktokAccounts.forEach((account) => {
+      if (size > account.max_video_size) {
+        updatedTiktokAccountStates[account.id] = {
+          state: "disabled",
+          message: `Cannot upload videos larger than ${account.max_video_size} GB to this account`,
+        };
+      }
+    });
+    setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
+
+    const updatedInstagramAccountStates = {
+      ...instagramAccountIdToProcessingState,
+    };
+    instagramAccounts.forEach((account) => {
+      if (size > account.max_video_size) {
+        updatedInstagramAccountStates[account.instagram_business_account_id] = {
+          state: "disabled",
+          message: `Cannot upload videos larger than ${account.max_video_size} GB to this account`,
+        };
+      }
+    });
+    setInstagramAccountIdToProcessingState(updatedInstagramAccountStates);
+
+    const updatedYoutubeChannelStates = {
+      ...youtubeChannelIdToProcessingState,
+    };
+    youtubeChannels.forEach((channel) => {
+      if (size > channel.max_video_size) {
+        updatedYoutubeChannelStates[channel.id] = {
+          state: "disabled",
+          message: `Cannot upload videos larger than ${channel.max_video_size} GB to this account`,
+        };
+      }
+    });
+    setYoutubeChannelIdToProcessingState(updatedYoutubeChannelStates);
   };
 
   const handleCustomButtonClick = () => {
@@ -316,11 +308,7 @@ export default function VideoUploadComponent({
 
   const processSocialMediaPost = () => {
     createSocialMediaPost(userId).then(async (socialMediaPostId) => {
-      if (files.length === 1) {
-        processSingleSocialMediaPost({ socialMediaPostId });
-      } else if (files.length > 1) {
-        processCarouselSocialMediaPost({ socialMediaPostId });
-      }
+      processSingleSocialMediaPost({ socialMediaPostId });
     });
   };
 
@@ -389,101 +377,12 @@ export default function VideoUploadComponent({
     return uploadResponse.path;
   };
 
-  const processCarouselSocialMediaPost = async ({
-    socialMediaPostId,
-  }: {
-    socialMediaPostId: string;
-  }) => {
-    const filePaths = await Promise.all(
-      files.map(async ({ file }, index) => {
-        return {
-          filePath: await uploadSocialMediaPostFile({
-            userId,
-            file,
-            index,
-            postId: socialMediaPostId,
-          }),
-          postType: file.type.includes("video") ? "video" : "image",
-        };
-      })
-    );
-    selectedInstagramAccounts.forEach(async (account) => {
-      setInstagramAccountIdToProcessingState({
-        [account.instagram_business_account_id]: {
-          state: "processing",
-          message: "Processing",
-        },
-      });
-      Promise.all(
-        filePaths.map(({ filePath, postType }) =>
-          createInstagramContainer({
-            instagramBusinessAccountId: account.instagram_business_account_id,
-            filePath,
-            userId,
-            postType: postType.includes("video") ? "video" : "image",
-            isCarouselItem: true,
-          })
-        )
-      )
-        .then((instagramCarouselMediaContainerIds) =>
-          checkInstagramContainerStatus({
-            containerIds: instagramCarouselMediaContainerIds,
-            instagramBusinessAccountId: account.instagram_business_account_id,
-            userId,
-          }).then(() =>
-            createInstagramCarouselContainer({
-              instagramCarouselMediaContainerIds,
-              instagramBusinessAccountId: account.instagram_business_account_id,
-              userId,
-              caption: instagramCaption,
-            }).then((instagramMediaContainerId) =>
-              checkInstagramContainerStatus({
-                containerIds: [instagramMediaContainerId],
-                instagramBusinessAccountId:
-                  account.instagram_business_account_id,
-                userId,
-              }).then(() =>
-                publishInstagramMediaContainer({
-                  instagramBusinessAccountId:
-                    account.instagram_business_account_id,
-                  instagramMediaContainerId,
-                  userId,
-                }).then((instagramMediaId) => {
-                  saveInstagramId({
-                    instagramMediaId,
-                    parentSocialMediaPostId: socialMediaPostId,
-                    caption: instagramCaption,
-                    userId,
-                    instagramAccountId: account.id,
-                  });
-                  setInstagramAccountIdToProcessingState({
-                    [account.instagram_business_account_id]: {
-                      state: "posted",
-                      message: "Posted",
-                    },
-                  });
-                })
-              )
-            )
-          )
-        )
-        .catch((err) => {
-          setInstagramAccountIdToProcessingState({
-            [account.instagram_business_account_id]: {
-              state: "error",
-              message: err.message,
-            },
-          });
-        });
-    });
-  };
-
   const processSingleSocialMediaPost = async ({
     socialMediaPostId,
   }: {
     socialMediaPostId: string;
   }) => {
-    const file = files[0].file;
+    const file = files[0];
     const filePath = await uploadSocialMediaPostFile({
       userId,
       file,
@@ -626,7 +525,7 @@ export default function VideoUploadComponent({
     });
   };
 
-  const containsPhotos = files.some((file) => file.file.type.includes("image"));
+  const containsPhotos = files.some((file) => file.type.includes("image"));
 
   return (
     <div className={"flex flex-col justify-center items-center w-full px-2"}>
@@ -635,22 +534,14 @@ export default function VideoUploadComponent({
           "flex justify-center items-center gap-2 flex-wrap w-full mb-4"
         }
       >
-        {files.map(({ file, errorMessage }) => (
+        {files.map((file) => (
           <div>
             <MemoizedMedia
               file={file}
               onRemove={() =>
-                setFiles((prev) => prev.filter((entry) => entry.file !== file))
+                setFiles((prev) => prev.filter((entry) => entry !== file))
               }
             />
-            {errorMessage && (
-              <div
-                className={"bg-red-500 rounded-lg p-4 flex items-center gap-2"}
-              >
-                <XCircleIcon className={"h-6 w-6"} />
-                <p className={""}>{errorMessage} </p>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -889,11 +780,10 @@ export default function VideoUploadComponent({
             style={{ display: "none" }}
             className={"hidden"}
             ref={fileInputRef}
-            multiple
+            multiple={false}
             name={"mediaFiles"}
-            accept="video/mp4, video/quicktime, image/jpeg"
+            accept="video/mp4, video/quicktime"
           />
-          <input type={"hidden"} name={"numberOfFiles"} value={files.length} />
           {selectedInstagramAccounts.length > 0 && (
             <div className="flex flex-col items-start gap-2 w-full">
               <Text
@@ -1083,7 +973,6 @@ export default function VideoUploadComponent({
                 selectedYoutubeChannels.length === 0 &&
                 selectedTiktokAccounts.length === 0) ||
               files.length === 0 ||
-              files.some((entry) => entry.errorMessage) ||
               (selectedYoutubeChannels.length > 0 &&
                 youtubeTitle.length === 0) ||
               (selectedYoutubeChannels.length > 0 &&
