@@ -1,6 +1,10 @@
 "use server";
 
-import { errorString, startingFunctionString } from "@/utils/logging";
+import {
+  endingFunctionString,
+  errorString,
+  startingFunctionString,
+} from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import {
   getSignedUrl,
@@ -10,6 +14,7 @@ import { Logger } from "next-axiom";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as crypto from "node:crypto";
+import { start } from "node:repl";
 
 export const loginWithTikTok = async () => {
   // const csrfState = Math.random().toString(36).substring(2);
@@ -551,4 +556,100 @@ const generateErrorMessage = (error: TikTokCreatorInfoErrorCode) => {
     case "internal_error":
       return "It seems like TikTok is having some issues. Please try again later.";
   }
+};
+
+export const refreshTikTokAccessTokens = async () => {
+  const supabase = createClient();
+  const logger = new Logger().with({
+    function: "refreshTikTokAccessTokens",
+  });
+  const { data, error } = await supabase
+    .from("tiktok-accounts")
+    .select("refresh_token");
+  logger.info(startingFunctionString);
+  if (error) {
+    logger.error(errorString, error);
+    await logger.flush();
+    throw error;
+  }
+  if (!data) {
+    logger.error(errorString, {
+      error: "No data returned from tiktok accounts",
+    });
+    await logger.flush();
+    throw error;
+  }
+  for (let i = 0; i < data.length; i++) {
+    await refreshTikTokAccessToken(data[0].refresh_token);
+  }
+};
+
+type TikTokRefreshTokenResponse = {
+  access_token?: string;
+  expires_in?: number;
+  open_id?: string;
+  refresh_expires_in?: number;
+  refresh_token?: string;
+  scope?: string;
+  token_type?: string;
+  error?: string;
+  error_description?: string;
+};
+
+const refreshTikTokAccessToken = async (accessToken: string) => {
+  const logger = new Logger().with({
+    function: "refreshTikTokAccessToken",
+    accessToken,
+  });
+  logger.info(startingFunctionString);
+  const supabase = createClient();
+  const { data, error: fetchUserError } = await supabase
+    .from("tiktok-accounts")
+    .select()
+    .eq("access_token", accessToken);
+  if (fetchUserError) {
+    logger.error(errorString, fetchUserError);
+    await logger.flush();
+    throw fetchUserError;
+  }
+  if (data.length === 0) {
+    const errorString = "No data found for access token";
+    logger.error(errorString, { error: errorString });
+    await logger.flush();
+    throw Error(errorString);
+  }
+  if (data.length > 1) {
+    const errorString = "More than one account found for access token";
+    logger.error(errorString, { error: errorString });
+    await logger.flush();
+  }
+  const account = data[0];
+  const response = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: `client_key=${process.env.TIKTOK_CLIENT_KEY}&client_secret=${process.env.TIKTOK_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${account.refresh_token}`,
+  });
+  const { error, error_description, refresh_token, access_token } =
+    (await response.json()) as TikTokRefreshTokenResponse;
+  if (error) {
+    logger.error(errorString, { error, error_description });
+    await logger.flush();
+    throw Error(error);
+  }
+  const { error: updateError } = await supabase
+    .from("tiktok-accounts")
+    .update({
+      refresh_token,
+      access_token,
+    })
+    .eq("id", account.id);
+  if (updateError) {
+    logger.error(errorString, updateError);
+    await logger.flush();
+    throw updateError;
+  }
+  logger.info(endingFunctionString);
+  await logger.flush();
 };
