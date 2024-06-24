@@ -267,7 +267,9 @@ export default function VideoUploadComponent({
       if (size > account.max_video_size) {
         updatedTiktokAccountStates[account.id] = {
           state: "disabled",
-          message: `Cannot upload videos larger than ${account.max_video_size} GB to this account`,
+          message: `Cannot upload videos larger than ${
+            account.max_video_size / 1024 ** 3
+          } GB to this account`,
         };
       }
     });
@@ -280,7 +282,9 @@ export default function VideoUploadComponent({
       if (size > account.max_video_size) {
         updatedInstagramAccountStates[account.instagram_business_account_id] = {
           state: "disabled",
-          message: `Cannot upload videos larger than ${account.max_video_size} GB to this account`,
+          message: `Cannot upload videos larger than ${
+            account.max_video_size / 1024 ** 3
+          } GB to this account`,
         };
       }
     });
@@ -293,7 +297,9 @@ export default function VideoUploadComponent({
       if (size > channel.max_video_size) {
         updatedYoutubeChannelStates[channel.id] = {
           state: "disabled",
-          message: `Cannot upload videos larger than ${channel.max_video_size} GB to this account`,
+          message: `Cannot upload videos larger than ${
+            channel.max_video_size / 1024 ** 3
+          } GB to this account`,
         };
       }
     });
