@@ -97,10 +97,20 @@ export const postVideoToYoutube = async ({
       user_id: userId,
       youtube_channel_id: youtubeChannelId,
     });
-  } catch (error) {
-    logger.error(errorString, {
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch (error: any) {
+    // Handle API errors
+    if (error.response && error.response.data) {
+      const apiError = error.response.data.error;
+      logger.error(errorString, {
+        error: apiError.message,
+        code: apiError.code,
+        errors: apiError.errors,
+      });
+    } else {
+      logger.error(errorString, {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
     await logger.flush();
     throw error;
   }

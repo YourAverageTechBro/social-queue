@@ -57,6 +57,8 @@ const privacyLevels: SelectorOption<PrivacyLevel>[] = [
   },
 ];
 
+type ProcessingState = "processing" | "posted" | "error" | "disabled";
+
 const MemoizedMedia = memo(
   function Media({ file, onRemove }: { file: File; onRemove: () => void }) {
     return (
@@ -115,26 +117,26 @@ export default function VideoUploadComponent({
     instagramAccountIdToProcessingState,
     setInstagramAccountIdToProcessingState,
   ] = useState<{
-    [key: string]: string;
+    [key: string]: { state: ProcessingState; message?: string };
   }>({});
   const [
     tiktokAccountIdToProcessingState,
     setTiktokAccountIdToProcessingState,
   ] = useState<{
-    [key: string]: string;
+    [key: string]: { state: ProcessingState; message?: string };
   }>(
     tiktokAccounts.reduce((acc, account) => {
       if (account.error) {
-        acc[account.id] = account.error;
+        acc[account.id] = { state: "disabled", message: account.error };
       }
       return acc;
-    }, {} as { [key: string]: string })
+    }, {} as { [key: string]: { state: ProcessingState; message?: string } })
   );
   const [
     youtubeChannelIdToProcessingState,
     setYoutubeChannelIdToProcessingState,
   ] = useState<{
-    [key: string]: string;
+    [key: string]: { state: ProcessingState; message?: string };
   }>({});
   const [youtubeTitle, setYoutubeTitle] = useState<string>("");
   const [instagramCaption, setInstagramCaption] = useState<string>("");
@@ -158,10 +160,74 @@ export default function VideoUploadComponent({
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const disableSocialAccountsFromFiles = (files: FileList) => {
+    if (files.length > 1) {
+      const updatedYoutubeAccountStates = {
+        ...youtubeChannelIdToProcessingState,
+      };
+      youtubeChannels.forEach((channel) => {
+        updatedYoutubeAccountStates[channel.id] = {
+          state: "disabled",
+          message: "Cannot upload multiple files to a Youtube channel",
+        };
+      });
+      setYoutubeChannelIdToProcessingState(updatedYoutubeAccountStates);
+    }
+
+    const containsImages = Array.from(files).some((file) =>
+      file.type.startsWith("image/")
+    );
+    if (containsImages) {
+      const updatedYoutubeAccountStates = {
+        ...youtubeChannelIdToProcessingState,
+      };
+      youtubeChannels.forEach((channel) => {
+        updatedYoutubeAccountStates[channel.id] = {
+          state: "disabled",
+          message: "Cannot upload images to a Youtube channel",
+        };
+      });
+      setYoutubeChannelIdToProcessingState(updatedYoutubeAccountStates);
+    }
+    const hasMixedFiles =
+      Array.from(files).some((file) => file.type.startsWith("image/")) &&
+      Array.from(files).some((file) => file.type.startsWith("video/"));
+
+    if (hasMixedFiles) {
+      const updatedTiktokAccountStates = {
+        ...tiktokAccountIdToProcessingState,
+      };
+      tiktokAccounts.forEach((account) => {
+        updatedTiktokAccountStates[account.id] = {
+          state: "disabled",
+          message: "Cannot upload a mix of images and videos to TikTok",
+        };
+      });
+      setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
+    }
+
+    if (
+      Array.from(files).filter((file) => file.type.startsWith("video/"))
+        .length > 1
+    ) {
+      const updatedTiktokAccountStates = {
+        ...tiktokAccountIdToProcessingState,
+      };
+      tiktokAccounts.forEach((account) => {
+        updatedTiktokAccountStates[account.id] = {
+          state: "disabled",
+          message: "Cannot upload more than 1 video to TikTok",
+        };
+      });
+      setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
+    }
+  };
+
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
     if (fileInputRef.current?.files) {
       const files = fileInputRef.current?.files;
+      disableSocialAccountsFromFiles(files);
       for (let i = 0; i < files.length; i++) {
         const selectedFile = files[i];
         if (
@@ -197,6 +263,7 @@ export default function VideoUploadComponent({
                 },
               ]);
             } else {
+              disableAccountsBasedOnVideoDuration(duration);
               setFiles((prev) => [
                 ...prev,
                 { file: selectedFile, errorMessage: "" },
@@ -224,6 +291,21 @@ export default function VideoUploadComponent({
         }
       }
     }
+  };
+
+  const disableAccountsBasedOnVideoDuration = (duration: number) => {
+    const updatedTiktokAccountStates = {
+      ...tiktokAccountIdToProcessingState,
+    };
+    tiktokAccounts.forEach((account) => {
+      if (duration > account.max_video_duration) {
+        updatedTiktokAccountStates[account.id] = {
+          state: "disabled",
+          message: `Cannot upload video longer than ${account.max_video_duration} seconds to this account`,
+        };
+      }
+    });
+    setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
   };
 
   const handleCustomButtonClick = () => {
@@ -327,7 +409,10 @@ export default function VideoUploadComponent({
     );
     selectedInstagramAccounts.forEach(async (account) => {
       setInstagramAccountIdToProcessingState({
-        [account.instagram_business_account_id]: "processing",
+        [account.instagram_business_account_id]: {
+          state: "processing",
+          message: "Processing",
+        },
       });
       Promise.all(
         filePaths.map(({ filePath, postType }) =>
@@ -372,7 +457,10 @@ export default function VideoUploadComponent({
                     instagramAccountId: account.id,
                   });
                   setInstagramAccountIdToProcessingState({
-                    [account.instagram_business_account_id]: "posted",
+                    [account.instagram_business_account_id]: {
+                      state: "posted",
+                      message: "Posted",
+                    },
                   });
                 })
               )
@@ -381,7 +469,10 @@ export default function VideoUploadComponent({
         )
         .catch((err) => {
           setInstagramAccountIdToProcessingState({
-            [account.instagram_business_account_id]: "error",
+            [account.instagram_business_account_id]: {
+              state: "error",
+              message: err.message,
+            },
           });
         });
     });
@@ -401,7 +492,10 @@ export default function VideoUploadComponent({
     });
     selectedInstagramAccounts.forEach((account) => {
       setInstagramAccountIdToProcessingState({
-        [account.instagram_business_account_id]: "processing",
+        [account.instagram_business_account_id]: {
+          state: "processing",
+          message: "Processing",
+        },
       });
       createInstagramContainer({
         instagramBusinessAccountId: account.instagram_business_account_id,
@@ -430,21 +524,29 @@ export default function VideoUploadComponent({
                 instagramAccountId: account.id,
               });
               setInstagramAccountIdToProcessingState({
-                [account.instagram_business_account_id]: "posted",
+                [account.instagram_business_account_id]: {
+                  state: "posted",
+                  message: "Posted",
+                },
               });
             });
           })
         )
         .catch((error) => {
           setInstagramAccountIdToProcessingState({
-            [account.instagram_business_account_id]:
-              error instanceof Error ? error.message : "Unknown error",
+            [account.instagram_business_account_id]: {
+              state: "error",
+              message: error instanceof Error ? error.message : "Unknown error",
+            },
           });
         });
     });
     selectedTiktokAccounts.forEach((account) => {
       setTiktokAccountIdToProcessingState({
-        [account.id]: "processing",
+        [account.id]: {
+          state: "processing",
+          message: "Processing",
+        },
       });
       uploadTikTokPost({
         userId,
@@ -477,14 +579,20 @@ export default function VideoUploadComponent({
             tiktokAccountId: account.id,
           });
           setTiktokAccountIdToProcessingState({
-            [account.id]: "posted",
+            [account.id]: {
+              state: "posted",
+              message: "Posted",
+            },
           });
         })
       );
     });
     selectedYoutubeChannels.forEach((channel) => {
       setYoutubeChannelIdToProcessingState({
-        [channel.id]: "processing",
+        [channel.id]: {
+          state: "processing",
+          message: "Processing",
+        },
       });
       const formData = new FormData();
       formData.append("youtubeChannelId", channel.id);
@@ -499,11 +607,19 @@ export default function VideoUploadComponent({
       }).then((resp) => {
         if (resp.ok) {
           setYoutubeChannelIdToProcessingState({
-            [channel.id]: "posted",
+            [channel.id]: {
+              state: "posted",
+              message: "Posted",
+            },
           });
         } else {
-          setYoutubeChannelIdToProcessingState({
-            [channel.id]: "error",
+          resp.json().then((data: { message: string }) => {
+            setYoutubeChannelIdToProcessingState({
+              [channel.id]: {
+                state: "error",
+                message: data.message,
+              },
+            });
           });
         }
       });
@@ -556,7 +672,12 @@ export default function VideoUploadComponent({
                     acc.instagram_business_account_id ===
                     account.instagram_business_account_id
                 ) && "border-2 border-orange-500"
-              } min-h-32`}
+              } disabeld:opacity-50 min-h-32`}
+              disabled={
+                instagramAccountIdToProcessingState[
+                  account.instagram_business_account_id
+                ].state === "disabled"
+              }
               onClick={() =>
                 setSelectedInstagramAccounts((prev) => {
                   if (
@@ -594,37 +715,37 @@ export default function VideoUploadComponent({
                   ${
                     instagramAccountIdToProcessingState[
                       account.instagram_business_account_id
-                    ] === "posted" && "text-green-400"
+                    ]?.state === "posted" && "text-green-400"
                   }
                   ${
                     instagramAccountIdToProcessingState[
                       account.instagram_business_account_id
-                    ]?.includes("error") && "text-red-400"
+                    ]?.state === "error" && "text-red-400"
                   }
                   ${
                     instagramAccountIdToProcessingState[
                       account.instagram_business_account_id
-                    ] === "processing" && "text-orange-400"
+                    ]?.state === "processing" && "text-orange-400"
                   }
                 `}
                 >
-                  {
+                  {`${
                     instagramAccountIdToProcessingState[
                       account.instagram_business_account_id
-                    ]
-                  }
+                    ]?.message ?? ""
+                  }`}
                 </p>
                 {instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
-                ] === "processing" && <LoadingSpinner size="h-6 w-6" />}
+                ]?.state === "processing" && <LoadingSpinner size="h-6 w-6" />}
                 {instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
-                ]?.includes("error") && (
-                  <XCircleIcon className="h-6 w-6 text-red-400" />
+                ]?.state === "error" && (
+                  <XCircleIcon className="h-6 w-6 text-red-4000" />
                 )}
                 {instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
-                ] === "posted" && (
+                ]?.state === "posted" && (
                   <CheckCircleIcon className="h-6 w-6 text-green-400" />
                 )}
               </div>
@@ -637,8 +758,8 @@ export default function VideoUploadComponent({
                 "border-2 border-orange-500"
               } disabled:opacity-50 min-h-32`}
               disabled={
-                tiktokAccounts.find((acc) => acc.id === account.id)?.error !==
-                undefined
+                tiktokAccountIdToProcessingState[account.id]?.state ===
+                "disabled"
               }
               onClick={() =>
                 setSelectedTiktokAccounts((prev) => {
@@ -665,28 +786,29 @@ export default function VideoUploadComponent({
                 <p
                   className={`
                   ${
-                    tiktokAccountIdToProcessingState[account.id] === "posted" &&
-                    "text-green-400"
+                    tiktokAccountIdToProcessingState[account.id]?.state ===
+                      "posted" && "text-green-400"
                   }
                   ${
-                    tiktokAccountIdToProcessingState[account.id]?.includes(
-                      "error"
-                    ) && "text-red-400"
+                    tiktokAccountIdToProcessingState[account.id]?.state ===
+                      "error" && "text-red-400"
                   }
                   ${
-                    tiktokAccountIdToProcessingState[account.id] ===
-                      "processing" && "text-orange-400"
+                    tiktokAccountIdToProcessingState[account.id]?.state ===
+                      "processing" && "text-orange-4000"
                   }
                 `}
                 >
-                  {tiktokAccountIdToProcessingState[account.id]}
+                  {`${
+                    tiktokAccountIdToProcessingState[account.id]?.message ?? ""
+                  }`}
                 </p>
-                {tiktokAccountIdToProcessingState[account.id] ===
+                {tiktokAccountIdToProcessingState[account.id]?.state ===
                   "processing" && <LoadingSpinner size="h-6 w-6" />}
-                {tiktokAccountIdToProcessingState[account.id]?.includes(
-                  "error"
-                ) && <XCircleIcon className="h-6 w-6 text-red-400" />}
-                {tiktokAccountIdToProcessingState[account.id] === "posted" && (
+                {tiktokAccountIdToProcessingState[account.id]?.state ===
+                  "error" && <XCircleIcon className="h-6 w-6 text-red-4000" />}
+                {tiktokAccountIdToProcessingState[account.id]?.state ===
+                  "posted" && (
                   <CheckCircleIcon className="h-6 w-6 text-green-400" />
                 )}
               </div>
@@ -697,7 +819,11 @@ export default function VideoUploadComponent({
               className={`p-4 rounded-lg bg-gray-800 flex flex-col justify-center items-center gap-2 ${
                 selectedYoutubeChannels.find((ch) => ch.id === channel.id) &&
                 "border-2 border-orange-500"
-              } min-h-32`}
+              } disabled:opacity-50 min-h-32`}
+              disabled={
+                youtubeChannelIdToProcessingState[channel.id]?.state ===
+                "disabled"
+              }
               onClick={() =>
                 setSelectedYoutubeChannels((prev) => {
                   if (prev.find((acc) => acc.id === channel.id)) {
@@ -723,28 +849,29 @@ export default function VideoUploadComponent({
                 <p
                   className={`
                   ${
-                    youtubeChannelIdToProcessingState[channel.id] ===
+                    youtubeChannelIdToProcessingState[channel.id]?.state ===
                       "posted" && "text-green-400"
                   }
                   ${
-                    youtubeChannelIdToProcessingState[channel.id]?.includes(
-                      "error"
-                    ) && "text-red-400"
+                    youtubeChannelIdToProcessingState[channel.id]?.state ===
+                      "error" && "text-red-400"
                   }
                   ${
-                    youtubeChannelIdToProcessingState[channel.id] ===
+                    youtubeChannelIdToProcessingState[channel.id]?.state ===
                       "processing" && "text-orange-400"
                   }
                 `}
                 >
-                  {youtubeChannelIdToProcessingState[channel.id]}
+                  {`${
+                    youtubeChannelIdToProcessingState[channel.id]?.message ?? ""
+                  }`}
                 </p>
-                {youtubeChannelIdToProcessingState[channel.id] ===
+                {youtubeChannelIdToProcessingState[channel.id]?.state ===
                   "processing" && <LoadingSpinner size="h-6 w-6" />}
-                {youtubeChannelIdToProcessingState[channel.id]?.includes(
-                  "error"
-                ) && <XCircleIcon className="h-6 w-6 text-red-400" />}
-                {youtubeChannelIdToProcessingState[channel.id] === "posted" && (
+                {youtubeChannelIdToProcessingState[channel.id]?.state ===
+                  "error" && <XCircleIcon className="h-6 w-6 text-red-400" />}
+                {youtubeChannelIdToProcessingState[channel.id]?.state ===
+                  "posted" && (
                   <CheckCircleIcon className="h-6 w-6 text-green-400" />
                 )}
               </div>
@@ -962,10 +1089,13 @@ export default function VideoUploadComponent({
               (selectedYoutubeChannels.length > 0 &&
                 youtubeTitle.length > 100) ||
               Object.values(instagramAccountIdToProcessingState).some(
-                (state) => state === "processing"
+                (state) => state.state === "processing"
               ) ||
               Object.values(youtubeChannelIdToProcessingState).some(
-                (state) => state === "processing"
+                (state) => state.state === "processing"
+              ) ||
+              Object.values(tiktokAccountIdToProcessingState).some(
+                (state) => state.state === "processing"
               )
             }
             type={"submit"}

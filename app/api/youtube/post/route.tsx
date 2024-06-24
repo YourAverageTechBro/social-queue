@@ -24,6 +24,14 @@ export const POST = withAxiom(async (req: AxiomRequest) => {
     });
     return NextResponse.json({ message: "success" });
   } catch (error) {
-    return NextResponse.json({ message: "error" });
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong, please try again.",
+      },
+      { status: 500 }
+    );
   }
 });
