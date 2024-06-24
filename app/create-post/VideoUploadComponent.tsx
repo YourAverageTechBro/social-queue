@@ -263,6 +263,7 @@ export default function VideoUploadComponent({
                 },
               ]);
             } else {
+              disableAccountsBasedOnVideoDuration(duration);
               setFiles((prev) => [
                 ...prev,
                 { file: selectedFile, errorMessage: "" },
@@ -290,6 +291,21 @@ export default function VideoUploadComponent({
         }
       }
     }
+  };
+
+  const disableAccountsBasedOnVideoDuration = (duration: number) => {
+    const updatedTiktokAccountStates = {
+      ...tiktokAccountIdToProcessingState,
+    };
+    tiktokAccounts.forEach((account) => {
+      if (duration > account.max_video_duration) {
+        updatedTiktokAccountStates[account.id] = {
+          state: "disabled",
+          message: `Cannot upload video longer than ${account.max_video_duration} seconds to this account`,
+        };
+      }
+    });
+    setTiktokAccountIdToProcessingState(updatedTiktokAccountStates);
   };
 
   const handleCustomButtonClick = () => {
