@@ -8,7 +8,6 @@ import {
   TrashIcon,
   XCircleIcon,
 } from "@heroicons/react/24/solid";
-import { Tables } from "@/types/supabase";
 import Text from "@/components/common/Text";
 import TextArea from "@/components/common/TextArea";
 import {
@@ -119,7 +118,15 @@ export default function VideoUploadComponent({
     setInstagramAccountIdToProcessingState,
   ] = useState<{
     [key: string]: { state: ProcessingState; message?: string };
-  }>({});
+  }>(
+    instagramAccounts.reduce((acc, account) => {
+      acc[account.instagram_business_account_id] = {
+        state: "disabled",
+        message: account.error,
+      };
+      return acc;
+    }, {} as { [key: string]: { state: ProcessingState; message?: string } })
+  );
   const [
     tiktokAccountIdToProcessingState,
     setTiktokAccountIdToProcessingState,
@@ -138,7 +145,12 @@ export default function VideoUploadComponent({
     setYoutubeChannelIdToProcessingState,
   ] = useState<{
     [key: string]: { state: ProcessingState; message?: string };
-  }>({});
+  }>(
+    youtubeChannels.reduce((acc, channel) => {
+      acc[channel.id] = { state: "disabled", message: channel.error };
+      return acc;
+    }, {} as { [key: string]: { state: ProcessingState; message?: string } })
+  );
   const [youtubeTitle, setYoutubeTitle] = useState<string>("");
   const [instagramCaption, setInstagramCaption] = useState<string>("");
   const [tiktokAutoAddMusicToPhotos, setTiktokAutoAddMusicToPhotos] =
