@@ -3,9 +3,8 @@
 import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
-import { FacebookGraphError } from "@/utils/facebookSdk";
+import { buildGraphAPIURL, FacebookGraphError } from "@/utils/facebookSdk";
 import { getSignedUrl } from "@/utils/supabase/storage";
-import { buildGraphAPIURL } from "./instagramAccounts";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
