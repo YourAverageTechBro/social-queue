@@ -59,7 +59,12 @@ const privacyLevels: SelectorOption<PrivacyLevel>[] = [
   },
 ];
 
-type ProcessingState = "processing" | "posted" | "error" | "disabled";
+type ProcessingState =
+  | "processing"
+  | "posted"
+  | "error"
+  | "disabled"
+  | "uploading";
 
 const MemoizedMedia = memo(
   function Media({ file, onRemove }: { file: File; onRemove: () => void }) {
@@ -329,6 +334,32 @@ export default function VideoUploadComponent({
   };
 
   const processSocialMediaPost = () => {
+    selectedInstagramAccounts.forEach((account) => {
+      setInstagramAccountIdToProcessingState({
+        [account.instagram_business_account_id]: {
+          state: "uploading",
+          message: "Uploading",
+        },
+      });
+    });
+
+    selectedTiktokAccounts.forEach((account) => {
+      setTiktokAccountIdToProcessingState({
+        [account.id]: {
+          state: "uploading",
+          message: "Uploading",
+        },
+      });
+    });
+
+    selectedYoutubeChannels.forEach((channel) => {
+      setYoutubeChannelIdToProcessingState({
+        [channel.id]: {
+          state: "uploading",
+          message: "Uploading",
+        },
+      });
+    });
     createSocialMediaPost(userId).then(async (socialMediaPostId) => {
       processSingleSocialMediaPost({ socialMediaPostId });
     });
@@ -589,7 +620,7 @@ export default function VideoUploadComponent({
               disabled={
                 instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
-                ].state === "disabled"
+                ]?.state === "disabled"
               }
               onClick={() =>
                 setSelectedInstagramAccounts((prev) => {
@@ -648,9 +679,14 @@ export default function VideoUploadComponent({
                     ]?.message ?? ""
                   }`}
                 </p>
-                {instagramAccountIdToProcessingState[
+                {(instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
-                ]?.state === "processing" && <LoadingSpinner size="h-6 w-6" />}
+                ]?.state === "processing" ||
+                  instagramAccountIdToProcessingState[
+                    account.instagram_business_account_id
+                  ]?.state === "uploading") && (
+                  <LoadingSpinner size="h-6 w-6" />
+                )}
                 {instagramAccountIdToProcessingState[
                   account.instagram_business_account_id
                 ]?.state === "error" && (
@@ -716,8 +752,10 @@ export default function VideoUploadComponent({
                     tiktokAccountIdToProcessingState[account.id]?.message ?? ""
                   }`}
                 </p>
-                {tiktokAccountIdToProcessingState[account.id]?.state ===
-                  "processing" && <LoadingSpinner size="h-6 w-6" />}
+                {(tiktokAccountIdToProcessingState[account.id]?.state ===
+                  "processing" ||
+                  tiktokAccountIdToProcessingState[account.id]?.state ===
+                    "uploading") && <LoadingSpinner size="h-6 w-6" />}
                 {tiktokAccountIdToProcessingState[account.id]?.state ===
                   "error" && <XCircleIcon className="h-6 w-6 text-red-4000" />}
                 {tiktokAccountIdToProcessingState[account.id]?.state ===
@@ -779,8 +817,10 @@ export default function VideoUploadComponent({
                     youtubeChannelIdToProcessingState[channel.id]?.message ?? ""
                   }`}
                 </p>
-                {youtubeChannelIdToProcessingState[channel.id]?.state ===
-                  "processing" && <LoadingSpinner size="h-6 w-6" />}
+                {(youtubeChannelIdToProcessingState[channel.id]?.state ===
+                  "processing" ||
+                  youtubeChannelIdToProcessingState[channel.id]?.state ===
+                    "uploading") && <LoadingSpinner size="h-6 w-6" />}
                 {youtubeChannelIdToProcessingState[channel.id]?.state ===
                   "error" && <XCircleIcon className="h-6 w-6 text-red-400" />}
                 {youtubeChannelIdToProcessingState[channel.id]?.state ===

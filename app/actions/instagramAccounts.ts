@@ -1,7 +1,7 @@
 "use server";
 import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
-import { FacebookGraphError } from "@/utils/facebookSdk";
+import { buildGraphAPIURL, FacebookGraphError } from "@/utils/facebookSdk";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fetchAccessTokenForInstagramBusinessAccountId } from "./socialMediaPosts";
@@ -267,36 +267,6 @@ const fetchLongLivedAccessToken = async (shortLivedAccessToken: string) => {
   return {
     longLivedAccessToken: data.access_token,
   };
-};
-
-const GRAPH_API_BASE_URL = `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}`;
-
-export const buildGraphAPIURL = ({
-  path,
-  searchParams,
-  accessToken,
-}: {
-  path: string;
-  searchParams: Record<string, string | null | undefined>;
-  accessToken?: string;
-}): string => {
-  const url = new URL(path, GRAPH_API_BASE_URL);
-
-  Object.keys(searchParams).forEach((key) => {
-    if (!searchParams[key]) {
-      delete searchParams[key];
-    }
-  });
-
-  url.search = new URLSearchParams(
-    searchParams as Record<string, string>
-  ).toString();
-
-  if (accessToken) {
-    url.searchParams.append("access_token", accessToken);
-  }
-
-  return url.toString();
 };
 
 export const fetchInstagramPublishingRateLimit = async ({

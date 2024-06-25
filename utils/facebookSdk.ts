@@ -90,3 +90,33 @@ export type FacebookGraphError = {
   error_user_msg: string;
   fbtrace_id: string;
 };
+
+const GRAPH_API_BASE_URL = `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}`;
+
+export const buildGraphAPIURL = ({
+  path,
+  searchParams,
+  accessToken,
+}: {
+  path: string;
+  searchParams: Record<string, string | null | undefined>;
+  accessToken?: string;
+}): string => {
+  const url = new URL(path, GRAPH_API_BASE_URL);
+
+  Object.keys(searchParams).forEach((key) => {
+    if (!searchParams[key]) {
+      delete searchParams[key];
+    }
+  });
+
+  url.search = new URLSearchParams(
+    searchParams as Record<string, string>
+  ).toString();
+
+  if (accessToken) {
+    url.searchParams.append("access_token", accessToken);
+  }
+
+  return url.toString();
+};
