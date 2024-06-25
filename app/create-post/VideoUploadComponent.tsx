@@ -120,10 +120,12 @@ export default function VideoUploadComponent({
     [key: string]: { state: ProcessingState; message?: string };
   }>(
     instagramAccounts.reduce((acc, account) => {
-      acc[account.instagram_business_account_id] = {
-        state: "disabled",
-        message: account.error,
-      };
+      if (account.error) {
+        acc[account.instagram_business_account_id] = {
+          state: "disabled",
+          message: account.error,
+        };
+      }
       return acc;
     }, {} as { [key: string]: { state: ProcessingState; message?: string } })
   );
@@ -147,7 +149,9 @@ export default function VideoUploadComponent({
     [key: string]: { state: ProcessingState; message?: string };
   }>(
     youtubeChannels.reduce((acc, channel) => {
-      acc[channel.id] = { state: "disabled", message: channel.error };
+      if (channel.error) {
+        acc[channel.id] = { state: "disabled", message: channel.error };
+      }
       return acc;
     }, {} as { [key: string]: { state: ProcessingState; message?: string } })
   );
