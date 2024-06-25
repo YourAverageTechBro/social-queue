@@ -5,7 +5,7 @@ import {
   errorString,
   startingFunctionString,
 } from "@/utils/logging";
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient, createClient } from "@/utils/supabase/server";
 import {
   getSignedUrl,
   socialMediaPostMediaFilesStorageBucket,
@@ -14,7 +14,6 @@ import { Logger } from "next-axiom";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as crypto from "node:crypto";
-import { start } from "node:repl";
 
 export const loginWithTikTok = async () => {
   // const csrfState = Math.random().toString(36).substring(2);
@@ -559,7 +558,7 @@ const generateErrorMessage = (error: TikTokCreatorInfoErrorCode) => {
 };
 
 export const refreshTikTokAccessTokens = async () => {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const logger = new Logger().with({
     function: "refreshTikTokAccessTokens",
   });
@@ -581,6 +580,10 @@ export const refreshTikTokAccessTokens = async () => {
     const { refresh_token, id } = data[0];
     await refreshTikTokAccessToken({ refreshToken: refresh_token, id });
   }
+  logger.info(endingFunctionString, {
+    numberOfAccounts: data.length,
+  });
+  await logger.flush();
 };
 
 type TikTokRefreshTokenResponse = {
