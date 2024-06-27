@@ -11,16 +11,12 @@ export const saveInstagramAccount = async ({
   shortLivedAccessToken,
   instagramBusinessAccountId,
   facebookPageId,
-  instagramAccountName,
-  pictureUrl,
   userId,
 }: {
   appScopedUserId: string;
   shortLivedAccessToken: string;
   instagramBusinessAccountId: string;
   facebookPageId: string;
-  instagramAccountName: string;
-  pictureUrl: string;
   userId: string;
 }) => {
   let logger = new Logger().with({
@@ -28,32 +24,18 @@ export const saveInstagramAccount = async ({
     shortLivedAccessToken,
     instagramBusinessAccountId,
     facebookPageId,
-    instagramAccountName,
-    pictureUrl,
     userId,
   });
   try {
-    const { instagramUsername } = await fetchInstagramUsernameFromPageId({
-      instagramBusinessAccountId,
-      shortLivedAccessToken,
-    });
-    logger = logger.with({ instagramUsername });
     const { longLivedAccessToken } = await fetchLongLivedAccessToken(
       shortLivedAccessToken
     );
     logger = logger.with({ longLivedAccessToken });
-    const profilePictureFilePath = await uploadInstagramProfilePicture({
-      userId,
-      instagramBusinessAccountId,
-      pictureUrl,
-    });
     const supabase = createClient();
     const { error } = await supabase.from("instagram-accounts").insert({
-      account_name: instagramAccountName,
       facebook_page_id: facebookPageId,
       instagram_business_account_id: instagramBusinessAccountId,
       access_token: longLivedAccessToken,
-      picture_file_path: profilePictureFilePath,
       user_id: userId,
     });
     if (error) {
@@ -146,93 +128,29 @@ export const deleteInstagramAccount = async (
   };
 };
 
-const uploadInstagramProfilePicture = async ({
-  userId,
+export const fetchInstagramUsernameFromPageId = async ({
   instagramBusinessAccountId,
-  pictureUrl,
-}: {
-  userId: string;
-  instagramBusinessAccountId: string;
-  pictureUrl: string;
-}) => {
-  const logger = new Logger().with({
-    function: "uploadInstagramProfilePicture",
-    userId,
-    instagramBusinessAccountId,
-    pictureUrl,
-  });
-  const supabase = createClient();
-
-  const bucketName =
-    process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
-
-  if (!bucketName) {
-    logger.error(errorString, {
-      error: "No bucket name found in environment",
-    });
-    await logger.flush();
-    throw new Error("No bucket name found in environment");
-  }
-
-  let file;
-  try {
-    const response = await fetch(pictureUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to download picture from URL: ${pictureUrl}`);
-    }
-    const blob = await response.blob();
-    file = new File([blob], `profile_picture`, { type: blob.type });
-  } catch (error) {
-    logger.error("Failed to download or create file from URL", {
-      error: error instanceof Error ? error.message : JSON.stringify(error),
-    });
-    await logger.flush();
-    throw new Error("Failed to download or create file from URL");
-  }
-
-  const filePath = `${userId}/instagramAccount/${instagramBusinessAccountId}/profile_picture.${
-    file.type.split("/")[1]
-  }`;
-
-  // Upload file
-  const { data: uploadResponse, error: uploadError } = await supabase.storage
-    .from(bucketName)
-    .upload(filePath, file, { upsert: true });
-  if (uploadError) {
-    logger.error(errorString, uploadError);
-    throw Error(
-      "Sorry, we had an issue uploading your file. Please try again."
-    );
-  }
-  if (!uploadResponse?.path) {
-    logger.error(errorString, {
-      error: "No file path found in response from Supabase",
-    });
-    throw new Error("No file path found in response from Supabase");
-  }
-  return uploadResponse.path;
-};
-
-const fetchInstagramUsernameFromPageId = async ({
-  instagramBusinessAccountId,
-  shortLivedAccessToken,
+  accessToken,
 }: {
   instagramBusinessAccountId: string;
-  shortLivedAccessToken: string;
+  accessToken: string;
 }) => {
   const logger = new Logger().with({
     function: "fetchInstagramUsernameFromPageId",
     instagramBusinessAccountId,
-    shortLivedAccessToken,
+    accessToken,
   });
-  const fields = "username";
-  const response = await fetch(
-    `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}/${instagramBusinessAccountId}?
-        fields=${fields}&access_token=${shortLivedAccessToken}`
-  );
+  const fields = "username,profile_picture_url";
+  const graphUrl = buildGraphAPIURL({
+    path: `/${instagramBusinessAccountId}`,
+    searchParams: { fields },
+    accessToken,
+  });
+  const response = await fetch(graphUrl);
   const data = (await response.json()) as {
     error: FacebookGraphError;
     username: string;
+    profile_picture_url: string;
   };
   logger.info("Fetched Instagram account data", data);
   if (data.error) {
@@ -241,9 +159,7 @@ const fetchInstagramUsernameFromPageId = async ({
     throw new Error("Failed fetching Instagram business account from page id");
   }
   await logger.flush();
-  return {
-    instagramUsername: data.username,
-  };
+  return data;
 };
 
 const fetchLongLivedAccessToken = async (shortLivedAccessToken: string) => {

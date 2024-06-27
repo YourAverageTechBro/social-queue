@@ -19,7 +19,10 @@ import { deleteYoutubeChannel } from "../actions/youtube";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import Modal from "@/components/common/Modal";
 import { deleteTikTokAccount } from "../actions/tiktok";
-import { TikTokAccountWithVideoRestrictions } from "../actions/socialMediaAccounts";
+import {
+  InstagramAccountWithVideoRestrictions,
+  TikTokAccountWithVideoRestrictions,
+} from "../actions/socialMediaAccounts";
 
 export default function Dashboard({
   userId,
@@ -29,7 +32,7 @@ export default function Dashboard({
   authError,
 }: {
   userId: string;
-  instagramAccounts: Tables<"instagram-accounts">[];
+  instagramAccounts: InstagramAccountWithVideoRestrictions[];
   tiktokAccounts: TikTokAccountWithVideoRestrictions[];
   youtubeChannels: Tables<"youtube-channels">[];
   authError: string;
@@ -51,7 +54,7 @@ export default function Dashboard({
     });
   const [openConfirmDeleteModal, setOpenConfirmDeleteModal] = useState(false);
   const [instagramAccountToDelete, setInstagramAccountToDelete] =
-    useState<Tables<"instagram-accounts">>();
+    useState<InstagramAccountWithVideoRestrictions>();
   const [tiktokAccountToDelete, setTiktokAccountToDelete] =
     useState<TikTokAccountWithVideoRestrictions>();
   const [youtubeChannelToDelete, setYoutubeChannelToDelete] =
@@ -91,7 +94,7 @@ export default function Dashboard({
   }, [deleteTikTokAccountState]);
 
   const constructSocialAccountBlock = (
-    instagramAccountToDelete: Tables<"instagram-accounts"> | undefined,
+    instagramAccountToDelete: InstagramAccountWithVideoRestrictions | undefined,
     tiktokAccountToDelete: TikTokAccountWithVideoRestrictions | undefined,
     youtubeChannelToDelete: Tables<"youtube-channels"> | undefined
   ) => {

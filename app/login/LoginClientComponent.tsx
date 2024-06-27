@@ -25,7 +25,7 @@ export default function LoginClientComponent() {
   return (
     <Auth
       supabaseClient={supabase}
-      providers={["google"]}
+      providers={["facebook", "google"]}
       redirectTo={`${location.origin}/auth/callback`}
       appearance={{
         theme: ThemeSupa,

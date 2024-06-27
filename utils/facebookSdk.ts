@@ -74,8 +74,6 @@ export const saveInstagramAccounts = ({
             shortLivedAccessToken: account.access_token,
             instagramBusinessAccountId: account.instagram_business_account.id,
             facebookPageId: account.id,
-            instagramAccountName: account.name,
-            pictureUrl: account.picture.data.url,
             userId: appScopedUserId,
           });
         });
