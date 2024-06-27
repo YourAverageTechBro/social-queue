@@ -12,32 +12,26 @@ export type Database = {
       "instagram-accounts": {
         Row: {
           access_token: string
-          account_name: string
           created_at: string
           facebook_page_id: string
           id: string
           instagram_business_account_id: string
-          picture_file_path: string
           user_id: string
         }
         Insert: {
           access_token: string
-          account_name: string
           created_at?: string
           facebook_page_id: string
           id?: string
           instagram_business_account_id: string
-          picture_file_path: string
           user_id: string
         }
         Update: {
           access_token?: string
-          account_name?: string
           created_at?: string
           facebook_page_id?: string
           id?: string
           instagram_business_account_id?: string
-          picture_file_path?: string
           user_id?: string
         }
         Relationships: [

@@ -5,7 +5,10 @@ import { createClient } from "@/utils/supabase/server";
 import { Logger } from "next-axiom";
 import { fetchCreatorInfo } from "./tiktok";
 import { Tables } from "@/types/supabase";
-import { fetchInstagramPublishingRateLimit } from "./instagramAccounts";
+import {
+  fetchInstagramPublishingRateLimit,
+  fetchInstagramUsernameFromPageId,
+} from "./instagramAccounts";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -48,10 +51,12 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
     ? await Promise.all(
         instagramAccounts?.map(
           async (account): Promise<InstagramAccountWithVideoRestrictions> => {
-            const supabase = createClient();
-            const { data } = await supabase.storage
-              .from(bucketName)
-              .createSignedUrl(account.picture_file_path, 60 * 60 * 24 * 300);
+            const { username, profile_picture_url } =
+              await fetchInstagramUsernameFromPageId({
+                instagramBusinessAccountId:
+                  account.instagram_business_account_id,
+                accessToken: account.access_token,
+              });
             const {
               config: { quota_total },
               quota_usage,
@@ -61,7 +66,8 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
             });
             return {
               ...account,
-              picture_file_path: data?.signedUrl ?? "",
+              account_name: username,
+              picture_file_path: profile_picture_url,
               min_video_duration: 3,
               max_video_duration: 90,
               max_video_size: 1024 * 1024 * 1024,
@@ -136,7 +142,11 @@ export type YoutubeChannelWithVideoRestrictions = Tables<"youtube-channels"> &
   VideoPostingRestrictions;
 
 export type InstagramAccountWithVideoRestrictions =
-  Tables<"instagram-accounts"> & VideoPostingRestrictions;
+  Tables<"instagram-accounts"> &
+    VideoPostingRestrictions & {
+      account_name: string;
+      picture_file_path: string;
+    };
 
 type VideoPostingRestrictions = {
   min_video_duration: number;
