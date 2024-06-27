@@ -34,14 +34,6 @@ export default function Dashboard({
   youtubeChannels: Tables<"youtube-channels">[];
   authError: string;
 }) {
-  const [appScopedUserId, setAppScopedUserId] = useState<string>("");
-  const [newInstagramAccounts, setNewInstagramAccounts] = useState<
-    InstagramAccount[]
-  >([]);
-  const [state, formAction] = useFormState(saveInstagramAccount, {
-    error: null,
-    data: { message: "", instagramBusinessAccountId: "" },
-  });
   const [deleteInstagramAccountState, deleteInstagramAccountFormAction] =
     useFormState(deleteInstagramAccount, {
       error: null,
@@ -70,22 +62,6 @@ export default function Dashboard({
       toast.error(authError);
     }
   }, [authError]);
-
-  useEffect(() => {
-    if (state.error) {
-      toast.error(state.error);
-    } else if (state.data) {
-      if (state.data.instagramBusinessAccountId) {
-        setNewInstagramAccounts((prevAccounts) =>
-          prevAccounts.filter(
-            (account) =>
-              account.instagram_business_account.id !==
-              state.data.instagramBusinessAccountId
-          )
-        );
-      }
-    }
-  }, [state]);
 
   useEffect(() => {
     if (deleteInstagramAccountState.error) {
@@ -186,74 +162,7 @@ export default function Dashboard({
         <div className="flex items-center gap-2 mt-4 justify-center">
           <TikTokLoginButton />
           <ConnectYoutubeAccountButton />
-          <ConnectInstagramAccountButton
-            setAppScopedUserId={setAppScopedUserId}
-            setInstagramAccounts={setNewInstagramAccounts}
-          />
-        </div>
-        <div className="flex items-center justify-center flex-wrap gap-2 mt-4">
-          {newInstagramAccounts
-            .filter(
-              (account) =>
-                !instagramAccounts.some(
-                  (existingAccount) =>
-                    existingAccount.instagram_business_account_id ===
-                    account.instagram_business_account.id
-                )
-            )
-            .map((account) => (
-              <form
-                action={formAction}
-                className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
-                key={account.id}
-              >
-                <input
-                  type={"hidden"}
-                  name={"appScopedUserId"}
-                  value={appScopedUserId}
-                />
-                <input
-                  type={"hidden"}
-                  name={"shortLivedAccessToken"}
-                  value={account.access_token}
-                />
-                <input
-                  type={"hidden"}
-                  name={"instagramBusinessAccountId"}
-                  value={account.instagram_business_account.id}
-                />
-                <input
-                  type={"hidden"}
-                  name={"facebookPageId"}
-                  value={account.id}
-                />
-                <input
-                  type={"hidden"}
-                  name={"instagramAccountName"}
-                  value={account.name}
-                />
-                <input
-                  type={"hidden"}
-                  name={"pictureUrl"}
-                  value={account.picture.data.url}
-                />
-                <input type={"hidden"} name={"userId"} value={userId} />
-
-                <div className="flex items-center gap-2">
-                  <div className="relative w-8 h-8">
-                    <img
-                      src={account.picture.data.url}
-                      alt={account.name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <Icons.instagram className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
-                  </div>
-                  <p>{account.name} </p>
-                </div>
-
-                <Button type={"submit"}>Connect Account</Button>
-              </form>
-            ))}
+          <ConnectInstagramAccountButton />
         </div>
 
         {instagramAccounts.length +

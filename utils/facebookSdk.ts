@@ -1,6 +1,7 @@
 import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import toast from "react-hot-toast";
+import { saveInstagramAccount } from "@/app/actions/instagramAccounts";
 
 const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_CLIENT_ID;
 
@@ -49,12 +50,12 @@ export const loginToFacebook = (
   window.FB.login(callback, loginOptions);
 };
 
-export const getInstagramAccountId = ({
-  onSuccessCallback,
+export const saveInstagramAccounts = ({
   logger,
+  appScopedUserId,
 }: {
-  onSuccessCallback: (accounts: InstagramAccount[]) => void;
   logger: Logger;
+  appScopedUserId: string;
 }) => {
   FB.api(
     "/me/accounts",
@@ -67,7 +68,17 @@ export const getInstagramAccountId = ({
           "Sorry, we had an issue connecting to Facebook. Please try again."
         );
       } else {
-        onSuccessCallback(response.data);
+        response.data.forEach((account) => {
+          saveInstagramAccount({
+            appScopedUserId,
+            shortLivedAccessToken: account.access_token,
+            instagramBusinessAccountId: account.instagram_business_account.id,
+            facebookPageId: account.id,
+            instagramAccountName: account.name,
+            pictureUrl: account.picture.data.url,
+            userId: appScopedUserId,
+          });
+        });
       }
     }
   );

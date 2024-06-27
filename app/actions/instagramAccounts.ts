@@ -6,16 +6,23 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fetchAccessTokenForInstagramBusinessAccountId } from "./socialMediaPosts";
 
-export const saveInstagramAccount = async (prevState: any, data: FormData) => {
-  const appScopedUserId = data.get("appScopedUserId") as string;
-  const shortLivedAccessToken = data.get("shortLivedAccessToken") as string;
-  const instagramBusinessAccountId = data.get(
-    "instagramBusinessAccountId"
-  ) as string;
-  const facebookPageId = data.get("facebookPageId") as string;
-  const instagramAccountName = data.get("instagramAccountName") as string;
-  const pictureUrl = data.get("pictureUrl") as string;
-  const userId = data.get("userId") as string;
+export const saveInstagramAccount = async ({
+  appScopedUserId,
+  shortLivedAccessToken,
+  instagramBusinessAccountId,
+  facebookPageId,
+  instagramAccountName,
+  pictureUrl,
+  userId,
+}: {
+  appScopedUserId: string;
+  shortLivedAccessToken: string;
+  instagramBusinessAccountId: string;
+  facebookPageId: string;
+  instagramAccountName: string;
+  pictureUrl: string;
+  userId: string;
+}) => {
   let logger = new Logger().with({
     appScopedUserId,
     shortLivedAccessToken,

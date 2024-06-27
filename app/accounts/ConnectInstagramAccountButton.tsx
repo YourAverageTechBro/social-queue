@@ -1,25 +1,15 @@
 import Icons from "@/components/common/Icons";
-import {
-  getInstagramAccountId,
-  InstagramAccount,
-  loginToFacebook,
-} from "@/utils/facebookSdk";
+import { saveInstagramAccounts, loginToFacebook } from "@/utils/facebookSdk";
 import { useLogger } from "next-axiom";
+import { saveInstagramAccount } from "../actions/instagramAccounts";
 
-export default function ConnectFacebookAccountButton({
-  setAppScopedUserId,
-  setInstagramAccounts,
-}: {
-  setAppScopedUserId: (appScopedUserId: string) => void;
-  setInstagramAccounts: (instagramAccounts: InstagramAccount[]) => void;
-}) {
+export default function ConnectInstagramAccountButton({}: {}) {
   const logger = useLogger();
   const facebookLoginCallback = (res: fb.StatusResponse) => {
     if (res.status === "connected") {
       const appScopedUserId = res.authResponse.userID;
-      setAppScopedUserId(appScopedUserId);
-      getInstagramAccountId({
-        onSuccessCallback: setInstagramAccounts,
+      saveInstagramAccounts({
+        appScopedUserId,
         logger,
       });
     }
