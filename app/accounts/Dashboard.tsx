@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { InstagramAccount } from "@/utils/facebookSdk";
-import {
-  deleteInstagramAccount,
-  saveInstagramAccount,
-} from "@/app/actions/instagramAccounts";
+import { deleteInstagramAccount } from "@/app/actions/instagramAccounts";
 import { useFormState } from "react-dom";
 import { Button } from "@/components/common/Button";
 import Text from "@/components/common/Text";
@@ -165,7 +161,7 @@ export default function Dashboard({
         <div className="flex items-center gap-2 mt-4 justify-center">
           <TikTokLoginButton />
           <ConnectYoutubeAccountButton />
-          <ConnectInstagramAccountButton />
+          <ConnectInstagramAccountButton userId={userId} />
         </div>
 
         {instagramAccounts.length +

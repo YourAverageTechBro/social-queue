@@ -8,34 +8,31 @@ import { fetchAccessTokenForInstagramBusinessAccountId } from "./socialMediaPost
 
 export const saveInstagramAccount = async ({
   appScopedUserId,
-  shortLivedAccessToken,
+  accessToken,
   instagramBusinessAccountId,
   facebookPageId,
   userId,
 }: {
   appScopedUserId: string;
-  shortLivedAccessToken: string;
+  accessToken: string;
   instagramBusinessAccountId: string;
   facebookPageId: string;
   userId: string;
 }) => {
   let logger = new Logger().with({
     appScopedUserId,
-    shortLivedAccessToken,
+    accessToken,
     instagramBusinessAccountId,
     facebookPageId,
     userId,
+    function: "saveInstagramAccount",
   });
   try {
-    const { longLivedAccessToken } = await fetchLongLivedAccessToken(
-      shortLivedAccessToken
-    );
-    logger = logger.with({ longLivedAccessToken });
     const supabase = createClient();
     const { error } = await supabase.from("instagram-accounts").insert({
       facebook_page_id: facebookPageId,
       instagram_business_account_id: instagramBusinessAccountId,
-      access_token: longLivedAccessToken,
+      access_token: accessToken,
       user_id: userId,
     });
     if (error) {

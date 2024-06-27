@@ -53,9 +53,11 @@ export const loginToFacebook = (
 export const saveInstagramAccounts = ({
   logger,
   appScopedUserId,
+  userId,
 }: {
   logger: Logger;
   appScopedUserId: string;
+  userId: string;
 }) => {
   FB.api(
     "/me/accounts",
@@ -70,11 +72,11 @@ export const saveInstagramAccounts = ({
       } else {
         response.data.forEach((account) => {
           saveInstagramAccount({
+            userId,
             appScopedUserId,
-            shortLivedAccessToken: account.access_token,
+            accessToken: account.access_token,
             instagramBusinessAccountId: account.instagram_business_account.id,
             facebookPageId: account.id,
-            userId: appScopedUserId,
           });
         });
       }
