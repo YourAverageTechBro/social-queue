@@ -1,7 +1,7 @@
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { Suspense } from "react";
-import { FacebookProvider } from "@/app/providers";
+import { CSPostHogProvider, FacebookProvider } from "@/app/providers";
 import { Toaster } from "react-hot-toast";
 import { AxiomWebVitals } from "next-axiom";
 import HeaderBar from "@/components/common/HeaderBar";
@@ -65,13 +65,15 @@ export default function RootLayout({
       <Suspense>
         <FacebookProvider />
       </Suspense>
-      <body className="bg-background text-foreground">
-        <main className="min-h-screen flex flex-col items-center">
-          <HeaderBar />
-          {children}
-          <Toaster />
-        </main>
-      </body>
+      <CSPostHogProvider>
+        <body className="bg-background text-foreground">
+          <main className="min-h-screen flex flex-col items-center">
+            <HeaderBar />
+            {children}
+            <Toaster />
+          </main>
+        </body>
+      </CSPostHogProvider>
     </html>
   );
 }
