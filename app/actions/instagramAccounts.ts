@@ -1,6 +1,10 @@
 "use server";
 import { Logger } from "next-axiom";
-import { errorString } from "@/utils/logging";
+import {
+  endingFunctionString,
+  errorString,
+  startingFunctionString,
+} from "@/utils/logging";
 import { buildGraphAPIURL, FacebookGraphError } from "@/utils/facebookSdk";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -28,6 +32,14 @@ export const saveInstagramAccount = async ({
     function: "saveInstagramAccount",
   });
   try {
+    logger.info(startingFunctionString);
+    const isAlreadySaved = await checkIfInstagramAccountIsAlreadySaved({
+      instagramBusinessAccountId,
+      userId,
+    });
+    if (isAlreadySaved) {
+      return;
+    }
     const supabase = createClient();
     const { error } = await supabase.from("instagram-accounts").insert({
       facebook_page_id: facebookPageId,
@@ -43,6 +55,7 @@ export const saveInstagramAccount = async ({
           "Sorry, we ran into an error connecting your Instagram account. Please try again.",
       };
     }
+    logger.info(endingFunctionString);
   } catch (error) {
     await logger.flush();
     logger.error(errorString, {
@@ -56,6 +69,7 @@ export const saveInstagramAccount = async ({
     await logger.flush();
   }
 
+  await logger.flush();
   revalidatePath("/accounts");
   return {
     data: {
@@ -64,6 +78,43 @@ export const saveInstagramAccount = async ({
     },
     error: null,
   };
+};
+
+const checkIfInstagramAccountIsAlreadySaved = async ({
+  instagramBusinessAccountId,
+  userId,
+}: {
+  instagramBusinessAccountId: string;
+  userId: string;
+}) => {
+  const logger = new Logger().with({
+    function: "checkIfInstagramAccountIsAlreadySaved",
+    instagramBusinessAccountId,
+    userId,
+  });
+  try {
+    const supabase = createClient();
+    logger.info(startingFunctionString);
+    const { data, error } = await supabase
+      .from("instagram-accounts")
+      .select("*")
+      .eq("instagram_business_account_id", instagramBusinessAccountId)
+      .eq("user_id", userId);
+    if (error) {
+      logger.error(errorString, error);
+      await logger.flush();
+      throw error;
+    }
+    logger.info(endingFunctionString);
+    await logger.flush();
+    return data.length > 0;
+  } catch (error) {
+    logger.error(errorString, {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    });
+    await logger.flush();
+    throw error;
+  }
 };
 
 export const deleteInstagramAccount = async (

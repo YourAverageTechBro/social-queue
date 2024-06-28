@@ -1,6 +1,10 @@
 import { createClient } from "@/utils/supabase/server";
 import { AxiomRequest, Logger, withAxiom } from "next-axiom";
-import { errorString, startingFunctionString } from "@/utils/logging";
+import {
+  endingFunctionString,
+  errorString,
+  startingFunctionString,
+} from "@/utils/logging";
 import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -64,6 +68,14 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
       throw Error("No access token, refresh token, or open id");
     }
 
+    const accountIsAlreadySaved = await checkIfTikTokAccountIsAlreadySaved({
+      openId: open_id,
+      userId: userId,
+    });
+    if (accountIsAlreadySaved) {
+      return NextResponse.redirect(`${origin}/accounts`);
+    }
+
     const { error: userError } = await supabase.from("tiktok-accounts").insert({
       id: open_id,
       access_token: access_token,
@@ -91,3 +103,40 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
   revalidatePath("/accounts");
   return NextResponse.redirect(`${origin}/accounts`);
 });
+
+const checkIfTikTokAccountIsAlreadySaved = async ({
+  openId,
+  userId,
+}: {
+  openId: string;
+  userId: string;
+}) => {
+  const logger = new Logger().with({
+    function: "checkIfTikTokAccountIsAlreadySaved",
+    openId,
+    userId,
+  });
+  try {
+    const supabase = createClient();
+    logger.info(startingFunctionString);
+    const { data, error } = await supabase
+      .from("tiktok-accounts")
+      .select("*")
+      .eq("id", openId)
+      .eq("user_id", userId);
+    if (error) {
+      logger.error(errorString, error);
+      await logger.flush();
+      throw error;
+    }
+    logger.info(endingFunctionString);
+    await logger.flush();
+    return data.length > 0;
+  } catch (error) {
+    logger.error(errorString, {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    });
+    await logger.flush();
+    throw error;
+  }
+};
