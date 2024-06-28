@@ -1,4 +1,8 @@
-import { errorString } from "@/utils/logging";
+import {
+  endingFunctionString,
+  errorString,
+  startingFunctionString,
+} from "@/utils/logging";
 import { createClient } from "@/utils/supabase/server";
 import youtubeAuthClient from "@/utils/youtube";
 import { google } from "googleapis";
@@ -59,22 +63,40 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
           const accessToken = tokens.access_token;
           const channelId = channels[0].id;
 
-          if (!customUrl || !thumbnail || !accessToken || !channelId) {
+          const supabase = createClient();
+          const currentUser = await supabase.auth.getUser();
+          const userId = currentUser.data.user?.id;
+
+          if (
+            !customUrl ||
+            !thumbnail ||
+            !accessToken ||
+            !channelId ||
+            !userId
+          ) {
             logger.error(errorString, {
               error: "Essential channel details are missing or incomplete.",
               customUrl,
               thumbnail,
               accessToken,
               channelId,
+              userId,
             });
             return NextResponse.redirect(
               `${origin}/accounts?error=Sorry, something unexpected happened. Our team is looking into it.`
             );
           }
 
-          const supabase = createClient();
-          const currentUser = await supabase.auth.getUser();
-          const userId = currentUser.data.user?.id;
+          const isAlreadySaved = await checkIfYoutubeChannelIsAlreadySaved({
+            channelId,
+            userId,
+          });
+
+          if (isAlreadySaved) {
+            logger.info("Youtube channel already saved");
+            return NextResponse.redirect(`${origin}/accounts`);
+          }
+
           if (!userId) {
             logger.error(errorString, { error: "No user found." });
             return NextResponse.redirect(
@@ -126,6 +148,43 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
   revalidatePath("/accounts");
   return NextResponse.redirect(`${origin}/accounts`);
 });
+
+const checkIfYoutubeChannelIsAlreadySaved = async ({
+  channelId,
+  userId,
+}: {
+  channelId: string;
+  userId: string;
+}) => {
+  const logger = new Logger().with({
+    function: "checkIfYoutubeChannelIsAlreadySaved",
+    channelId,
+    userId,
+  });
+  try {
+    const supabase = createClient();
+    logger.info(startingFunctionString);
+    const { data, error } = await supabase
+      .from("youtube-channels")
+      .select("*")
+      .eq("id", channelId)
+      .eq("user_id", userId);
+    if (error) {
+      logger.error(errorString, error);
+      await logger.flush();
+      throw error;
+    }
+    logger.info(endingFunctionString);
+    await logger.flush();
+    return data.length > 0;
+  } catch (error) {
+    logger.error(errorString, {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    });
+    await logger.flush();
+    throw error;
+  }
+};
 
 const uploadYoutubeProfilePicture = async ({
   userId,
