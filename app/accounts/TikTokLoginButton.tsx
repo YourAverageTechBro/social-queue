@@ -11,7 +11,7 @@ export default function TikTokLoginButton() {
         type={"submit"}
       >
         <Icons.tiktok className="inline-block h-6 w-6" />
-        <p className="font-bold">Connect TikTok </p>
+        <p className="font-bold">Connect TikTok Account</p>
       </button>
     </form>
   );
