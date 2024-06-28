@@ -158,7 +158,7 @@ export default function Dashboard({
     <>
       <div className="mt-8">
         <Text intent={"title"} text={"Connect A New Account"} />
-        <div className="flex items-center gap-2 mt-4 justify-center">
+        <div className="flex flex-col md:flex-row items-center gap-2 mt-4 justify-center">
           <TikTokLoginButton />
           <ConnectYoutubeAccountButton />
           <ConnectInstagramAccountButton userId={userId} />
