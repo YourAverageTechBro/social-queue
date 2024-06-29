@@ -13,6 +13,7 @@ const textStyles = cva("", {
       white: "text-white",
       error: "text-red-500",
       accent: "text-orange-600",
+      secondary: "text-gray-400",
     },
     alignment: {
       left: "text-left",

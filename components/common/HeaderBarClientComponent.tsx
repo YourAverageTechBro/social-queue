@@ -26,8 +26,17 @@ export default function HeaderBarClientComponent({
       {
         name: "Create Post",
         href: "/create-post",
+      },
+      {
+        name: "Upgrade",
+        href: "/pricing",
       }
     );
+  } else {
+    navigation.push({
+      name: "Pricing",
+      href: "/pricing",
+    });
   }
 
   useEffect(() => {

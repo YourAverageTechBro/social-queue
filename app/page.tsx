@@ -15,6 +15,7 @@ export default function SocialQueue() {
       <HeroComponent />
       <FeaturesSection />
       <UsVsCompetitors />
+      <CallToAction />
       <Footer />
     </div>
   );
@@ -168,6 +169,26 @@ const FeaturesSection = () => {
     </div>
   );
 };
+
+const CallToAction = () => (
+  <div className="flex flex-col items-center mt-16">
+    <Text
+      alignment={"center"}
+      intent={"title"}
+      text={"Ready to simplify your social media management?"}
+      color="white"
+    />
+    <Text
+      alignment={"center"}
+      intent={"subtitle"}
+      text={
+        "Join Social Queue today and start posting to all your accounts effortlessly."
+      }
+      color="secondary"
+    />
+    <Button href={"/login"}>Get Started</Button>
+  </div>
+);
 
 const Circle = forwardRef<
   HTMLDivElement,
