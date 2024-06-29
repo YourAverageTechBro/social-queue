@@ -203,9 +203,7 @@ export const fetchInstagramUsernameFromPageId = async ({
         userId,
       });
       await logger.flush();
-      throw new Error(
-        "Failed fetching Instagram business account from page id"
-      );
+      return null;
     } else {
       logger.error(errorString, data.error);
       await logger.flush();
