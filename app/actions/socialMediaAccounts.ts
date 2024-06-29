@@ -51,12 +51,18 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
     ? await Promise.all(
         instagramAccounts?.map(
           async (account): Promise<InstagramAccountWithVideoRestrictions> => {
-            const { username, profile_picture_url } =
-              await fetchInstagramUsernameFromPageId({
-                instagramBusinessAccountId:
-                  account.instagram_business_account_id,
-                accessToken: account.access_token,
-              });
+            let profile_picture_url;
+            let username;
+
+            const response = await fetchInstagramUsernameFromPageId({
+              instagramBusinessAccountId: account.instagram_business_account_id,
+              accessToken: account.access_token,
+              userId,
+            });
+
+            username = response?.username;
+            profile_picture_url = response?.profile_picture_url;
+
             const {
               config: { quota_total },
               quota_usage,
@@ -66,8 +72,11 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
             });
             return {
               ...account,
-              account_name: username,
-              picture_file_path: profile_picture_url,
+              account_name:
+                username ??
+                "error fetching account — refresh or reconnect your account",
+              picture_file_path:
+                profile_picture_url ?? (await generateEmptyProfilePictureUrl()),
               min_video_duration: 3,
               max_video_duration: 90,
               max_video_size: 1024 * 1024 * 1024,
@@ -153,4 +162,40 @@ type VideoPostingRestrictions = {
   max_video_duration: number;
   max_video_size: number;
   error: string | undefined;
+};
+
+const ASSETS_BUCKET = process.env.ASSETS_BUCKET;
+
+const generateEmptyProfilePictureUrl = async () => {
+  const logger = new Logger().with({
+    function: "generateEmptyProfilePictureUrl",
+  });
+  if (!ASSETS_BUCKET) {
+    logger.error(errorString, {
+      error: "No assets bucket found in environment",
+    });
+    await logger.flush();
+    throw new Error("No assets bucket found in environment");
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase.storage
+    .from(ASSETS_BUCKET)
+    .createSignedUrl("empty-profile-picture.png", 60 * 60 * 24 * 300);
+  if (error) {
+    logger.error(errorString, error);
+    await logger.flush();
+    throw new Error("Failed to generate empty profile picture URL");
+  }
+  if (!data) {
+    logger.error(errorString, {
+      error: "No data found in signed URL",
+    });
+    await logger.flush();
+    throw new Error("No data found in signed URL");
+  }
+  logger.info("Generated empty profile picture URL", {
+    signedUrl: data.signedUrl,
+  });
+  await logger.flush();
+  return data.signedUrl;
 };
