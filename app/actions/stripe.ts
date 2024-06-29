@@ -74,7 +74,7 @@ export const redirectToStripeCustomerPortal = async (data: FormData) => {
   const stripeCustomerId = data.get("stripeCustomerId") as string;
   const session = await stripe.billingPortal.sessions.create({
     customer: stripeCustomerId,
-    return_url: `https://nexusresearch.ai/upgrade`,
+    return_url: `${headers().get("origin")}/accounts`,
   });
   redirect(session.url as string);
 };
