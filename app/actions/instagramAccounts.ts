@@ -41,7 +41,7 @@ export const saveInstagramAccount = async ({
     if (isAlreadySaved) {
       return;
     }
-    const { longLivedPageAccessToken } = await fetchLongLivedUserAccessToken({
+    const { longLivedPageAccessToken } = await fetchLongLivedPageAccessToken({
       appScopedUserId,
       shortLivedAccessToken: accessToken,
     });
@@ -248,22 +248,23 @@ const fetchLongLivedUserAccessToken = async ({
     throw new Error("Failed fetching long lived access token");
   }
   await logger.flush();
-  return fetchLongLivedPageAccessToken({
-    appScopedUserId,
-    longLivedAccessToken: data.access_token,
-  });
+  return data.access_token;
 };
 
 const fetchLongLivedPageAccessToken = async ({
   appScopedUserId,
-  longLivedAccessToken,
+  shortLivedAccessToken,
 }: {
   appScopedUserId: string;
-  longLivedAccessToken: string;
+  shortLivedAccessToken: string;
 }) => {
   const logger = new Logger().with({
     function: "fetchLongLivedPageAccessToken",
-    longLivedAccessToken,
+    shortLivedAccessToken,
+  });
+  const longLivedAccessToken = await fetchLongLivedUserAccessToken({
+    appScopedUserId,
+    shortLivedAccessToken,
   });
   const graphUrl = buildGraphAPIURL({
     path: `/${appScopedUserId}/accounts`,
