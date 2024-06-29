@@ -168,11 +168,9 @@ const _deleteInstagramAccount = async ({
 export const fetchInstagramUsernameFromPageId = async ({
   instagramBusinessAccountId,
   accessToken,
-  userId,
 }: {
   instagramBusinessAccountId: string;
   accessToken: string;
-  userId: string;
 }) => {
   const logger = new Logger().with({
     function: "fetchInstagramUsernameFromPageId",
@@ -197,10 +195,6 @@ export const fetchInstagramUsernameFromPageId = async ({
       logger.warn(warningString, {
         message: "Access token expired",
         error: data.error,
-      });
-      await _deleteInstagramAccount({
-        instagramBusinessAccountId,
-        userId,
       });
       await logger.flush();
       return null;

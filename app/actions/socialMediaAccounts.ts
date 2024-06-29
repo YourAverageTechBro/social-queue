@@ -57,7 +57,6 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
             const response = await fetchInstagramUsernameFromPageId({
               instagramBusinessAccountId: account.instagram_business_account_id,
               accessToken: account.access_token,
-              userId,
             });
 
             username = response?.username;
