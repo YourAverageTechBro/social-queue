@@ -4,6 +4,7 @@ import {
   endingFunctionString,
   errorString,
   startingFunctionString,
+  warningString,
 } from "@/utils/logging";
 import { buildGraphAPIURL, FacebookGraphError } from "@/utils/facebookSdk";
 import { createClient } from "@/utils/supabase/server";
@@ -40,11 +41,15 @@ export const saveInstagramAccount = async ({
     if (isAlreadySaved) {
       return;
     }
+    const { longLivedPageAccessToken } = await fetchLongLivedPageAccessToken({
+      appScopedUserId,
+      shortLivedAccessToken: accessToken,
+    });
     const supabase = createClient();
     const { error } = await supabase.from("instagram-accounts").insert({
       facebook_page_id: facebookPageId,
       instagram_business_account_id: instagramBusinessAccountId,
-      access_token: accessToken,
+      access_token: longLivedPageAccessToken,
       user_id: userId,
     });
     if (error) {
@@ -125,55 +130,39 @@ export const deleteInstagramAccount = async (
     "instagramBusinessAccountId"
   ) as string;
   const userId = data.get("userId") as string;
-  const logger = new Logger().with({
+  await _deleteInstagramAccount({
     instagramBusinessAccountId,
     userId,
   });
-  const supabase = createClient();
-  try {
-    const { error } = await supabase
-      .from("instagram-accounts")
-      .delete()
-      .eq("instagram_business_account_id", instagramBusinessAccountId);
-    if (error) {
-      logger.error(errorString, error);
-      await logger.flush();
-      return {
-        error:
-          "Sorry, we ran into an error deleting your Instagram account. Please try again.",
-      };
-    }
-
-    const { error: storageError } = await supabase.storage
-      .from(
-        process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET!
-      )
-      .remove([`${userId}/instagramAccount/${instagramBusinessAccountId}`]);
-    if (storageError) {
-      logger.error(errorString, storageError);
-      await logger.flush();
-      return {
-        error:
-          "Sorry, we ran into an error deleting your Instagram account. Please try again.",
-      };
-    }
-  } catch (error) {
-    await logger.flush();
-    logger.error(errorString, {
-      error: error instanceof Error ? error.message : JSON.stringify(error),
-    });
-    return {
-      error:
-        "Sorry, we ran into an error deleting your Instagram account. Please try again.",
-    };
-  } finally {
-    await logger.flush();
-  }
-  revalidatePath("/accounts");
   return {
     data: "Successfully deleted Instagram account",
     error: null,
   };
+};
+
+const _deleteInstagramAccount = async ({
+  instagramBusinessAccountId,
+  userId,
+}: {
+  instagramBusinessAccountId: string;
+  userId: string;
+}) => {
+  const logger = new Logger().with({
+    instagramBusinessAccountId,
+    userId,
+    function: "_deleteInstagramAccount",
+  });
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("instagram-accounts")
+    .delete()
+    .eq("instagram_business_account_id", instagramBusinessAccountId);
+  if (error) {
+    logger.error(errorString, error);
+    await logger.flush();
+    throw error;
+  }
+  revalidatePath("/accounts");
 };
 
 export const fetchInstagramUsernameFromPageId = async ({
@@ -202,26 +191,34 @@ export const fetchInstagramUsernameFromPageId = async ({
   };
   logger.info("Fetched Instagram account data", data);
   if (data.error) {
-    // TODO: Better error handling when token expired.
-    //   error: {
-    //   message: 'Error validating access token: Session has expired on Thursday, 27-Jun-24 14:00:00 PDT. The current time is Friday, 28-Jun-24 20:14:39 PDT.',
-    //   type: 'OAuthException',
-    //   code: 190,
-    //   error_subcode: 463,
-    //   fbtrace_id: 'A0vXJChaY0mXZJe9rBO6eSW'
-    // }
-    logger.error(errorString, data.error);
-    await logger.flush();
-    throw new Error("Failed fetching Instagram business account from page id");
+    if (data.error.error_subcode === 463) {
+      logger.warn(warningString, {
+        message: "Access token expired",
+        error: data.error,
+      });
+      await logger.flush();
+      return null;
+    } else {
+      logger.error(errorString, data.error);
+      await logger.flush();
+      return null;
+    }
   }
   await logger.flush();
   return data;
 };
 
-const fetchLongLivedAccessToken = async (shortLivedAccessToken: string) => {
+const fetchLongLivedUserAccessToken = async ({
+  appScopedUserId,
+  shortLivedAccessToken,
+}: {
+  appScopedUserId: string;
+  shortLivedAccessToken: string;
+}) => {
   const logger = new Logger().with({
     function: "fetchLongLivedAccessToken",
     shortLivedAccessToken,
+    appScopedUserId,
   });
   const response = await fetch(
     `https://graph.facebook.com/v${process.env.FACEBOOK_GRAPH_API_VERSION}/oauth/access_token?
@@ -243,8 +240,47 @@ const fetchLongLivedAccessToken = async (shortLivedAccessToken: string) => {
     throw new Error("Failed fetching long lived access token");
   }
   await logger.flush();
+  return data.access_token;
+};
+
+const fetchLongLivedPageAccessToken = async ({
+  appScopedUserId,
+  shortLivedAccessToken,
+}: {
+  appScopedUserId: string;
+  shortLivedAccessToken: string;
+}) => {
+  const logger = new Logger().with({
+    function: "fetchLongLivedPageAccessToken",
+    shortLivedAccessToken,
+  });
+  const longLivedAccessToken = await fetchLongLivedUserAccessToken({
+    appScopedUserId,
+    shortLivedAccessToken,
+  });
+  const graphUrl = buildGraphAPIURL({
+    path: `/${appScopedUserId}/accounts`,
+    searchParams: {},
+    accessToken: longLivedAccessToken,
+  });
+  const response = await fetch(graphUrl, {
+    method: "GET",
+  });
+  const data = (await response.json()) as {
+    error: FacebookGraphError;
+    data: {
+      access_token: string;
+    }[];
+  };
+  logger.info("Fetched long lived page access token", data);
+  if (data.error) {
+    logger.error(errorString, data.error);
+    await logger.flush();
+    throw new Error("Failed fetching long lived page access token");
+  }
+  await logger.flush();
   return {
-    longLivedAccessToken: data.access_token,
+    longLivedPageAccessToken: data.data[0].access_token,
   };
 };
 
