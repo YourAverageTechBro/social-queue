@@ -15,7 +15,26 @@ export const getUser = async () => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return { user };
+
+  let isProUser = false;
+  if (user?.id) {
+    const { data, error } = await supabase
+      .from("pro-users")
+      .select("*")
+      .eq("user_id", user?.id);
+    const logger = new Logger().with({
+      function: "getUser",
+      userId: user.id,
+    });
+    if (error) {
+      logger.error(errorString, error);
+      await logger.flush();
+      throw error;
+    }
+    isProUser = data?.[0] ? true : false;
+  }
+
+  return { user, isProUser };
 };
 
 export const signOut = async (_: FormData) => {

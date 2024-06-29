@@ -202,6 +202,14 @@ export const fetchInstagramUsernameFromPageId = async ({
   };
   logger.info("Fetched Instagram account data", data);
   if (data.error) {
+    // TODO: Better error handling when token expired.
+    //   error: {
+    //   message: 'Error validating access token: Session has expired on Thursday, 27-Jun-24 14:00:00 PDT. The current time is Friday, 28-Jun-24 20:14:39 PDT.',
+    //   type: 'OAuthException',
+    //   code: 190,
+    //   error_subcode: 463,
+    //   fbtrace_id: 'A0vXJChaY0mXZJe9rBO6eSW'
+    // }
     logger.error(errorString, data.error);
     await logger.flush();
     throw new Error("Failed fetching Instagram business account from page id");

@@ -1,3 +1,9 @@
+import PricingTable from "./PricingTable";
+
 export default function PricingPage() {
-  return <p> {"comign soon :)"} </p>;
+  return (
+    <div>
+      <PricingTable />
+    </div>
+  );
 }
