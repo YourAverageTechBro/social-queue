@@ -3,8 +3,8 @@ import { cva, VariantProps } from "class-variance-authority";
 const textStyles = cva("", {
   variants: {
     intent: {
-      jumboTitle: "font-bold text-5xl md:text-6xl text-white",
-      title: "font-extrabold text-3xl text-white",
+      jumboTitle: "font-bold text-5xl md:text-6xl",
+      title: "font-extrabold text-3xl",
       subtitle: "font-bold text-xl",
       body: "text-md",
     },
