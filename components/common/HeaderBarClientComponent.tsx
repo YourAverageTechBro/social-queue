@@ -11,8 +11,10 @@ import { usePathname } from "next/navigation";
 
 export default function HeaderBarClientComponent({
   user,
+  isProUser,
 }: {
   user: User | null;
+  isProUser: boolean;
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -36,6 +38,13 @@ export default function HeaderBarClientComponent({
     navigation.push({
       name: "Pricing",
       href: "/pricing",
+    });
+  }
+
+  if (isProUser) {
+    navigation.push({
+      name: "Manage Subscription",
+      href: "/manage-subscription",
     });
   }
 

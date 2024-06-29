@@ -34,7 +34,9 @@ export const getUser = async () => {
     isProUser = data?.[0] ? true : false;
   }
 
-  return { user, isProUser };
+  const stripeCustomerId = user?.app_metadata.stripe_customer_id;
+
+  return { user, isProUser, stripeCustomerId };
 };
 
 export const signOut = async (_: FormData) => {
