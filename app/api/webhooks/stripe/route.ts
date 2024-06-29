@@ -3,10 +3,14 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { AxiomRequest, Logger, withAxiom } from "next-axiom";
 import { createAdminClient } from "@/utils/supabase/server";
-import { endingFunctionString, errorString } from "@/utils/logging";
+import {
+  endingFunctionString,
+  errorString,
+  startingFunctionString,
+} from "@/utils/logging";
 import { trackServerEvent } from "@/utils/posthog/utils";
 
-export const maxDuration = 300; // This function can run for a maximum of 5 seconds
+export const maxDuration = 300;
 
 const STRIPE_MONTHLY_PRICE_ID = process.env.STRIPE_MONTHLY_PRICE_ID;
 const STRIPE_YEARLY_PRICE_ID = process.env.STRIPE_YEARLY_PRICE_ID;
@@ -104,7 +108,7 @@ const handleCheckoutSessionCompletedEvent = async (
   log: Logger
 ) => {
   const supabase = createAdminClient();
-  log.info("Starting to handle checkout.session.completed", {
+  log.info(startingFunctionString, {
     text,
     path: "webhooks/stripe",
     method: "POST",
@@ -170,7 +174,7 @@ const handleCustomerSubscriptionDeletedEvent = async (
   log: Logger
 ) => {
   const supabase = createAdminClient();
-  log.info("Starting to handle customer.subscription.deleted", {
+  log.info(startingFunctionString, {
     text,
     eventType: event.type,
   });
@@ -183,10 +187,18 @@ const handleCustomerSubscriptionDeletedEvent = async (
   ) {
     return;
   }
-  await supabase
+  const { error } = await supabase
     .from("pro-users")
     .delete()
     .eq("stripe_customer_id", stripeCustomerId);
+  if (error) {
+    throw error;
+  }
+  log.info(endingFunctionString, {
+    text,
+    eventType: event.type,
+    stripeCustomerId,
+  });
 };
 
 const handleInvoicePaymentFailedEvent = async (
@@ -208,8 +220,16 @@ const handleInvoicePaymentFailedEvent = async (
   ) {
     return;
   }
-  await supabase
+  const { error } = await supabase
     .from("pro-users")
     .delete()
     .eq("stripe_customer_id", stripeCustomerId);
+  if (error) {
+    throw error;
+  }
+  log.info(endingFunctionString, {
+    text,
+    eventType: event.type,
+    stripeCustomerId,
+  });
 };
