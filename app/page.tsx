@@ -13,6 +13,7 @@ export default function SocialQueue() {
       <FeaturesSection />
       <UsVsCompetitors />
       <PricingTable />
+      <OpenSource />
       <CallToAction />
       <Footer />
     </div>
@@ -164,6 +165,30 @@ const FeaturesSection = () => {
           />
         </div>
       </div>
+    </div>
+  );
+};
+
+const OpenSource = () => {
+  return (
+    <div className="flex flex-col items-center mt-16">
+      <Text
+        alignment={"center"}
+        intent={"title"}
+        text={"Proudly Open Source"}
+        color="white"
+      />
+      <Text
+        alignment={"center"}
+        intent={"subtitle"}
+        text={
+          "We are proud to be an open source project that operates with 100% transparency. You have full access to the code at all times so you know exactly what we're doing."
+        }
+        color="white"
+      />
+      <Button href={"https://github.com/YourAverageTechBro/social-queue"}>
+        Check Us Out On Github
+      </Button>
     </div>
   );
 };

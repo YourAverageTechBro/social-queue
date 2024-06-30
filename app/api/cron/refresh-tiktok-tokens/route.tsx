@@ -12,12 +12,12 @@ export const GET = withAxiom(async (req: AxiomRequest) => {
     path: "/api/cron/refresh-tiktok-token",
     method: "GET",
   });
-  // const authHeader = req.headers.get("authorization");
-  // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return new Response("Unauthorized", {
-  //     status: 401,
-  //   });
-  // }
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response("Unauthorized", {
+      status: 401,
+    });
+  }
   try {
     logger.info(startingFunctionString);
     await refreshTikTokAccessTokens();
