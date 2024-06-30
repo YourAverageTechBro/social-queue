@@ -30,10 +30,13 @@ export default async function Footer() {
           <div className="flex items-center pb-6">
             <a
               href={`https://github.com/YourAverageTechBro/social-queue`}
-              className="text-sm leading-6 text-white hover:text-gray-400 flex items-center bg-gray-600 rounded-lg p-2"
+              className="text-sm leading-6 text-white hover:text-gray-400 flex items-center bg-gray-600 rounded-tl-lg rounded-bl-lg p-2"
             >
-              {starCount} <StarIcon className="w-4 h-4" /> on Github
+              <StarIcon className="w-4 h-4" /> us on Github
             </a>
+            <div className="bg-gray-800 rounded-tr-lg rounded-br-lg p-2">
+              {starCount}
+            </div>
           </div>
         </nav>
         <p className="mt-10 text-center text-xs leading-5 text-gray-500">
