@@ -1,7 +1,7 @@
 "use server";
 
 import { errorString } from "@/utils/logging";
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient, createClient } from "@/utils/supabase/server";
 import { Logger } from "next-axiom";
 import { fetchCreatorInfo } from "./tiktok";
 import { Tables } from "@/types/supabase";
@@ -80,9 +80,10 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
               max_video_duration: 90,
               max_video_size: 1024 * 1024 * 1024,
               error:
-                quota_usage === quota_total
+                response?.error?.message ??
+                (quota_usage === quota_total
                   ? "You've posted too many times recently. Please try again later."
-                  : "",
+                  : ""),
             };
           }
         )
@@ -122,8 +123,12 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
             );
             return {
               ...account,
-              profile_picture_file_path: data?.creator_avatar_url ?? "",
-              account_name: data?.creator_nickname ?? "",
+              profile_picture_file_path:
+                data?.creator_avatar_url ??
+                (await generateEmptyProfilePictureUrl()),
+              account_name:
+                data?.creator_nickname ??
+                "error fetching account — refresh or reconnect your account",
               min_video_duration: 3,
               max_video_duration: data?.max_video_post_duration_sec ?? 0,
               max_video_size: 1024 * 1024 * 1024 * 4,
@@ -179,7 +184,7 @@ const generateEmptyProfilePictureUrl = async () => {
   const supabase = createClient();
   const { data, error } = await supabase.storage
     .from(ASSETS_BUCKET)
-    .createSignedUrl("empty-profile-picture.png", 60 * 60 * 24 * 300);
+    .createSignedUrl("/empty-profile-picture.png", 60 * 60 * 24 * 300);
   if (error) {
     logger.error(errorString, error);
     await logger.flush();

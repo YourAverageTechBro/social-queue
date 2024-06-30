@@ -1,13 +1,10 @@
-"use client";
-
-import React, { forwardRef, useRef } from "react";
-import { cn } from "@/utils/utils";
-import { AnimatedBeam } from "@/components/common/AnimatedBeam";
+import React, { forwardRef } from "react";
+import { AnimatedBeams } from "@/components/landing-page/AnimatedBeams";
 import { Button } from "@/components/common/Button";
 import Text from "@/components/common/Text";
-import Icons from "@/components/common/Icons";
 import Footer from "@/components/common/Footer";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
+import PricingTable from "./pricing/PricingTable";
 
 export default function SocialQueue() {
   return (
@@ -15,6 +12,7 @@ export default function SocialQueue() {
       <HeroComponent />
       <FeaturesSection />
       <UsVsCompetitors />
+      <PricingTable />
       <CallToAction />
       <Footer />
     </div>
@@ -28,7 +26,7 @@ const HeroComponent = () => (
         "flex flex-col justify-center items-center md:items-start gap-4"
       }
     >
-      <h1 className={"font-bold text-4xl text-center md:text-left"}>
+      <h1 className={"font-bold text-6xl text-center md:text-left"}>
         Upload Once, Post Everywhere
       </h1>
       <Text
@@ -38,7 +36,7 @@ const HeroComponent = () => (
       />
       <Button href={"/login"}> Get Started </Button>
     </div>
-    <AnimatedBeamMultipleOutputDemo />
+    <AnimatedBeams />
   </div>
 );
 
@@ -84,11 +82,11 @@ const UsVsCompetitors = () => {
     <div className="mt-8 p-2">
       <Text intent={"title"} text={"Social Queue vs Competitors"} />
       <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-4">
-        <div className="bg-gray-800 p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
+        <div className="bg-gray-900 p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
           <Text intent={"title"} text={"Competitors 🤢"} />
           <FeatureTable features={competitorFeatures} type="competitor" />
         </div>
-        <div className="bg-gray-800 p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
+        <div className="bg-gray-900 p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
           <Text intent={"title"} text={"Social Queue 🙂"} />
           <FeatureTable features={socialQueueFeatures} type="socialqueue" />
         </div>
@@ -101,11 +99,11 @@ const FeaturesSection = () => {
   return (
     <div className="mt-8 p-2">
       <Text
-        alignment={"center"}
-        intent={"title"}
+        alignment={"left"}
+        intent={"jumboTitle"}
         text={"Dead Simple Social Media Management"}
       />
-      <div className="flex flex-col md:flex-row gap-4 items-center mt-8">
+      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-gray-900 p-4 rounded-lg">
         <div className="flex flex-col gap-4 w-full md:w-1/2">
           <Text
             alignment={"left"}
@@ -123,11 +121,11 @@ const FeaturesSection = () => {
         </div>
         <img
           src="/connect-accounts-demo.png"
-          className="w-full md:w-1/2 border-2 border-orange-600 rounded-lg"
+          className="w-full md:w-1/2 rounded-lg"
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center mt-8">
+      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-gray-900 p-4 rounded-lg">
         <div className="flex flex-col gap-4 w-full md:w-1/2">
           <Text
             alignment={"left"}
@@ -145,11 +143,11 @@ const FeaturesSection = () => {
         </div>
         <img
           src="/create-post-demo.png"
-          className="w-full md:w-1/2 border-2 border-orange-600 rounded-lg"
+          className="w-full md:w-1/2 rounded-lg"
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center mt-8">
+      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-gray-900 p-4 rounded-lg">
         <div className="flex flex-col gap-4 w-full">
           <Text
             alignment={"left"}
@@ -178,118 +176,6 @@ const CallToAction = () => (
       text={"Ready to simplify your social media management?"}
       color="white"
     />
-    <Text
-      alignment={"center"}
-      intent={"subtitle"}
-      text={
-        "Join Social Queue today and start posting to all your accounts effortlessly."
-      }
-      color="secondary"
-    />
     <Button href={"/login"}>Get Started</Button>
   </div>
 );
-
-const Circle = forwardRef<
-  HTMLDivElement,
-  { className?: string; children?: React.ReactNode }
->(({ className, children }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-white p-3 shadow-[0_0_20px_-12px_rgba(0,0,0,0.8)]",
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-});
-
-const AnimatedBeamMultipleOutputDemo = ({
-  className,
-}: {
-  className?: string;
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const div1Ref = useRef<HTMLDivElement>(null);
-  const div2Ref = useRef<HTMLDivElement>(null);
-  const div3Ref = useRef<HTMLDivElement>(null);
-  const div4Ref = useRef<HTMLDivElement>(null);
-  const div5Ref = useRef<HTMLDivElement>(null);
-  const div6Ref = useRef<HTMLDivElement>(null);
-  const div7Ref = useRef<HTMLDivElement>(null);
-
-  return (
-    <div
-      className={cn(
-        "relative flex w-full max-w-[500px] items-center justify-center overflow-hidden rounded-lg bg-background p-10 md:shadow-xl",
-        className
-      )}
-      ref={containerRef}
-    >
-      <div className="flex h-full w-full flex-row items-stretch justify-between gap-10">
-        <div className="flex flex-col justify-center">
-          <Circle ref={div7Ref}>
-            <Icons.user className="text-black" />
-          </Circle>
-        </div>
-        <div className="flex flex-col justify-center">
-          <Circle ref={div6Ref} className="h-16 w-16">
-            <Icons.socialqueue className="h-6 w-6" />
-          </Circle>
-        </div>
-        <div className="flex flex-col justify-center gap-2">
-          <Circle ref={div1Ref}>
-            <Icons.instagram className="h-6 w-6" />
-          </Circle>
-          <Circle ref={div2Ref}>
-            <Icons.tiktok className="h-6 w-6" />
-          </Circle>
-          <Circle ref={div3Ref}>
-            <Icons.youtube className="h-6 w-6" />
-          </Circle>
-        </div>
-      </div>
-
-      {/* AnimatedBeams */}
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={div1Ref}
-        toRef={div6Ref}
-        duration={3}
-      />
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={div2Ref}
-        toRef={div6Ref}
-        duration={3}
-      />
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={div3Ref}
-        toRef={div6Ref}
-        duration={3}
-      />
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={div4Ref}
-        toRef={div6Ref}
-        duration={3}
-      />
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={div5Ref}
-        toRef={div6Ref}
-        duration={3}
-      />
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={div6Ref}
-        toRef={div7Ref}
-        duration={3}
-      />
-    </div>
-  );
-};

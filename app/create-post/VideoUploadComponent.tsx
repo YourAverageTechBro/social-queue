@@ -616,7 +616,7 @@ export default function VideoUploadComponent({
                     acc.instagram_business_account_id ===
                     account.instagram_business_account_id
                 ) && "border-2 border-orange-500"
-              } disabeld:opacity-50 min-h-32`}
+              } disabled:opacity-50 min-h-32`}
               disabled={
                 instagramAccountIdToProcessingState[
                   account.instagram_business_account_id

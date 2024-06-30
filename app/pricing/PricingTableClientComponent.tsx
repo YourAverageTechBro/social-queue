@@ -37,7 +37,7 @@ export default function PricingTableClientComponent({
   const yearlyPriceAmount = yearlyPrice.unit_amount || 0;
 
   return (
-    <div className="pricing-table">
+    <div className="pricing-table p-2">
       <h1 className="text-3xl font-bold text-center mb-8">Pricing</h1>
       <div className="flex justify-center mb-8">
         <button
@@ -57,7 +57,7 @@ export default function PricingTableClientComponent({
           Yearly
         </button>
       </div>
-      <div className="flex justify-center gap-8">
+      <div className="flex flex-col md:flex-row justify-center gap-8">
         <div className="pricing-card bg-gray-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Basic</h2>
           <p className="text-4xl font-bold mb-4">Free</p>
@@ -72,7 +72,7 @@ export default function PricingTableClientComponent({
         </div>
         <div className="pricing-card bg-gray-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Pro </h2>
-          <div className="flex items-baseline text-4xl font-bold mb-4 gap-4">
+          <div className="flex items-baseline text-4xl font-bold mb-2 gap-4">
             <div>
               <span>
                 ${(isYearly ? yearlyPriceAmount : monthlyPriceAmount) / 100}/
@@ -80,13 +80,13 @@ export default function PricingTableClientComponent({
               </span>
             </div>
             {isYearly && (
-              <div className="flex items-baseline text-lg font-semibold mb-4 text-gray-400">
+              <div className="flex items-baseline text-lg font-semibold mb-2 text-gray-400">
                 (${yearlyPriceAmount / 12 / 100}/month)
               </div>
             )}
           </div>
           {isYearly && (
-            <p className="text-green-500 font-semibold mb-4">
+            <p className="text-green-500 font-semibold mb-2">
               2 months free compared to monthly!
             </p>
           )}
