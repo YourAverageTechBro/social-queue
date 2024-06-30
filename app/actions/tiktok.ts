@@ -539,21 +539,21 @@ const generateErrorMessage = (error: TikTokCreatorInfoErrorCode) => {
     case "ok":
       return;
     case "spam_risk_too_many_posts":
-      return "You've posted too many times recently. Please try again later.";
+      return "You've posted too many times recently — please try again later";
     case "spam_risk_user_banned_from_posting":
-      return "You've been banned from posting. Please contact TikTok support if you believe this is an error.";
+      return "You've been banned from posting — please contact TikTok support if you believe this is an error";
     case "reached_active_user_cap":
-      return "You've reached the maximum number of active posts. Please try again later.";
+      return "You've reached the maximum number of active posts — please try again later";
     case "unaudited_client_can_only_post_to_private_accounts":
-      return "You can only post to private accounts. Please try again later.";
+      return "You can only post to private accounts — please try again later";
     case "access_token_invalid":
-      return "Your access token is invalid. Reconnect your account and try again.";
+      return "Your access token is invalid — please reconnect your account and try again";
     case "scope_not_authorized":
-      return "Your scope is not authorized. Reconnect your account and try again.";
+      return "Your scope is not authorized — please reconnect your account and try again";
     case "rate_limit_exceeded":
-      return "You've posted too many times recently. Please try again later.";
+      return "You've posted too many times recently — please try again later";
     case "internal_error":
-      return "It seems like TikTok is having some issues. Please try again later.";
+      return "It seems like TikTok is having some issues — please try again later";
   }
 };
 

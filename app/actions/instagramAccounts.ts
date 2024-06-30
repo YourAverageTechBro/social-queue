@@ -197,11 +197,25 @@ export const fetchInstagramUsernameFromPageId = async ({
         error: data.error,
       });
       await logger.flush();
-      return null;
+      return {
+        error: {
+          message:
+            "We lost connection to your account — please reconnect your account",
+        },
+        username: null,
+        profile_picture_url: null,
+      };
     } else {
       logger.error(errorString, data.error);
       await logger.flush();
-      return null;
+      return {
+        error: {
+          message:
+            "Failed fetching Instagram account info — refresh the page or reconnect your account",
+        },
+        username: null,
+        profile_picture_url: null,
+      };
     }
   }
   await logger.flush();
@@ -327,14 +341,24 @@ export const fetchInstagramPublishingRateLimit = async ({
   if (facebookGraphError) {
     logger.error(errorString, { ...facebookGraphError });
     await logger.flush();
-    throw new Error("Failed creating carousel container");
+    return {
+      config: {
+        quota_total: 0,
+      },
+      quota_usage: 0,
+    };
   }
   if (data.length === 0) {
     logger.error(errorString, {
       error: "No data found in response from Facebook Graph API",
     });
     await logger.flush();
-    throw new Error("Failed creating carousel container");
+    return {
+      config: {
+        quota_total: 0,
+      },
+      quota_usage: 0,
+    };
   }
   await logger.flush();
   return data[0];
