@@ -353,7 +353,12 @@ export const fetchInstagramPublishingRateLimit = async ({
       error: "No data found in response from Facebook Graph API",
     });
     await logger.flush();
-    throw new Error("Failed fetching Instagram publishing rate limit");
+    return {
+      config: {
+        quota_total: 0,
+      },
+      quota_usage: 0,
+    };
   }
   await logger.flush();
   return data[0];
