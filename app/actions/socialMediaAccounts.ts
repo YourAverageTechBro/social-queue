@@ -9,6 +9,8 @@ import {
   fetchInstagramPublishingRateLimit,
   fetchInstagramUsernameFromPageId,
 } from "./instagramAccounts";
+import { getYoutubeChannelInfo } from "./youtube";
+import { Credentials } from "google-auth-library";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -94,16 +96,13 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
     ? await Promise.all(
         youtubeChannels?.map(
           async (channel): Promise<YoutubeChannelWithVideoRestrictions> => {
-            const supabase = createClient();
-            const { data } = await supabase.storage
-              .from(bucketName)
-              .createSignedUrl(
-                channel.profile_picture_path,
-                60 * 60 * 24 * 300
-              );
+            const { thumbnail } = await getYoutubeChannelInfo(
+              channel.credentials as Credentials
+            );
             return {
               ...channel,
-              profile_picture_path: data?.signedUrl ?? "",
+              profile_picture_path:
+                thumbnail ?? (await generateEmptyProfilePictureUrl()),
               min_video_duration: 3,
               max_video_duration: 60,
               max_video_size: 1024 * 1024 * 1024 * 256,
@@ -152,7 +151,9 @@ export type TikTokAccountWithVideoRestrictions = Tables<"tiktok-accounts"> & {
 } & VideoPostingRestrictions;
 
 export type YoutubeChannelWithVideoRestrictions = Tables<"youtube-channels"> &
-  VideoPostingRestrictions;
+  VideoPostingRestrictions & {
+    profile_picture_path: string;
+  };
 
 export type InstagramAccountWithVideoRestrictions =
   Tables<"instagram-accounts"> &

@@ -192,3 +192,47 @@ export const deleteYoutubeChannel = async (prevState: any, data: FormData) => {
     error: null,
   };
 };
+
+export const getYoutubeChannelInfo = async (token: Credentials) => {
+  const logger = new Logger().with({
+    function: "getYoutubeChannelInfo",
+    token,
+  });
+  youtubeAuthClient.setCredentials(token);
+  var service = google.youtube("v3");
+
+  const response = await service.channels.list({
+    auth: youtubeAuthClient,
+    part: ["snippet", "contentDetails", "statistics"],
+    mine: true,
+  });
+
+  var channels = response?.data.items;
+  if (!channels) {
+    logger.error(errorString, {
+      error: "No response from YouTube API",
+    });
+    throw new Error("No response from YouTube API");
+  }
+  if (channels.length == 0) {
+    logger.error(errorString, { error: "No channel found." });
+    throw Error("No channel found.");
+  }
+  logger.info("Fetched channel", channels[0]);
+
+  const snippet = channels[0].snippet;
+  if (!snippet) {
+    logger.error(errorString, { error: "No snippet found." });
+    throw new Error("No snippet found.");
+  }
+  const customUrl = snippet.customUrl;
+  const accessToken = token.access_token;
+  const channelId = channels[0].id;
+  const thumbnail = snippet.thumbnails?.default?.url;
+  return {
+    customUrl,
+    accessToken,
+    channelId,
+    thumbnail,
+  };
+};
