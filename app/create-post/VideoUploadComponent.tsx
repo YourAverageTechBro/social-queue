@@ -508,7 +508,7 @@ export default function VideoUploadComponent({
         brandContentToggle: tiktokIsBrandedContent,
         accessToken: account.access_token,
         filePath,
-        privacyLevel: "SELF_ONLY",
+        privacyLevel: tiktokPrivacyLevel.value,
         disableDuet,
         disableComment,
         disableStitch,

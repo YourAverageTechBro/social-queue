@@ -157,11 +157,6 @@ export const uploadTikTokPost = async ({
     signedUrl,
   });
 
-  const url =
-    postType === "video"
-      ? "https://open.tiktokapis.com/v2/post/publish/video/init/"
-      : "https://open.tiktokapis.com/v2/post/publish/content/init/";
-
   let body;
   if (postType === "video") {
     body = {
