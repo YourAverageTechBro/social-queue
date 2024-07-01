@@ -18,6 +18,7 @@ import { deleteTikTokAccount } from "../actions/tiktok";
 import {
   InstagramAccountWithVideoRestrictions,
   TikTokAccountWithVideoRestrictions,
+  YoutubeChannelWithVideoRestrictions,
 } from "../actions/socialMediaAccounts";
 
 export default function Dashboard({
@@ -30,7 +31,7 @@ export default function Dashboard({
   userId: string;
   instagramAccounts: InstagramAccountWithVideoRestrictions[];
   tiktokAccounts: TikTokAccountWithVideoRestrictions[];
-  youtubeChannels: Tables<"youtube-channels">[];
+  youtubeChannels: YoutubeChannelWithVideoRestrictions[];
   authError: string;
 }) {
   const [deleteInstagramAccountState, deleteInstagramAccountFormAction] =
@@ -54,7 +55,7 @@ export default function Dashboard({
   const [tiktokAccountToDelete, setTiktokAccountToDelete] =
     useState<TikTokAccountWithVideoRestrictions>();
   const [youtubeChannelToDelete, setYoutubeChannelToDelete] =
-    useState<Tables<"youtube-channels">>();
+    useState<YoutubeChannelWithVideoRestrictions>();
 
   useEffect(() => {
     if (authError) {
@@ -92,7 +93,7 @@ export default function Dashboard({
   const constructSocialAccountBlock = (
     instagramAccountToDelete: InstagramAccountWithVideoRestrictions | undefined,
     tiktokAccountToDelete: TikTokAccountWithVideoRestrictions | undefined,
-    youtubeChannelToDelete: Tables<"youtube-channels"> | undefined
+    youtubeChannelToDelete: YoutubeChannelWithVideoRestrictions | undefined
   ) => {
     if (instagramAccountToDelete) {
       return (
