@@ -34,8 +34,15 @@ export const GET = withAxiom(async (request: AxiomRequest) => {
     } else if (code) {
       try {
         let { tokens } = await youtubeAuthClient.getToken(code);
-        const { customUrl, accessToken, channelId } =
-          await getYoutubeChannelInfo(tokens);
+        logger = logger.with({ tokens });
+        const channelInfo = await getYoutubeChannelInfo(tokens);
+        if (!channelInfo) {
+          return NextResponse.redirect(
+            `${origin}/accounts?error=We could not connect your Youtube channel. Please try again.`
+          );
+        }
+        const { customUrl, accessToken, channelId } = channelInfo;
+        logger = logger.with({ ...channelInfo });
         const supabase = createClient();
         const currentUser = await supabase.auth.getUser();
         const userId = currentUser.data.user?.id;

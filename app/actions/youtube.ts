@@ -1,7 +1,11 @@
 "use server";
 
-import { errorString, startingFunctionString } from "@/utils/logging";
-import { createClient } from "@/utils/supabase/server";
+import {
+  endingFunctionString,
+  errorString,
+  startingFunctionString,
+} from "@/utils/logging";
+import { createAdminClient, createClient } from "@/utils/supabase/server";
 import youtubeAuthClient from "@/utils/youtube";
 import { randomBytes } from "crypto";
 import { Credentials } from "google-auth-library";
@@ -25,6 +29,7 @@ export const connectYoutubeAccount = async () => {
     scope: scopes,
     include_granted_scopes: true,
     state: state,
+    prompt: "consent", // Forces consent screen to appear — necessary b/c google only issues refresh on initial auth
   });
 
   redirect(authUrl);
@@ -212,18 +217,18 @@ export const getYoutubeChannelInfo = async (token: Credentials) => {
     logger.error(errorString, {
       error: "No response from YouTube API",
     });
-    throw new Error("No response from YouTube API");
+    return;
   }
   if (channels.length == 0) {
     logger.error(errorString, { error: "No channel found." });
-    throw Error("No channel found.");
+    return;
   }
   logger.info("Fetched channel", channels[0]);
 
   const snippet = channels[0].snippet;
   if (!snippet) {
     logger.error(errorString, { error: "No snippet found." });
-    throw new Error("No snippet found.");
+    return;
   }
   const customUrl = snippet.customUrl;
   const accessToken = token.access_token;
@@ -235,4 +240,76 @@ export const getYoutubeChannelInfo = async (token: Credentials) => {
     channelId,
     thumbnail,
   };
+};
+
+export const refreshYoutubeAccessTokens = async () => {
+  const supabase = createAdminClient();
+  const logger = new Logger().with({
+    function: "refreshYoutubeAccessTokens",
+  });
+  const { data, error } = await supabase.from("youtube-channels").select("*");
+  logger.info(startingFunctionString);
+  if (error) {
+    logger.error(errorString, error);
+    await logger.flush();
+    throw error;
+  }
+  if (!data) {
+    logger.error(errorString, {
+      error: "No data returned from youtube channels",
+    });
+    await logger.flush();
+    throw error;
+  }
+  for (let i = 0; i < data.length; i++) {
+    const { credentials, id } = data[i];
+    await refreshYoutubeAccessToken({
+      credentials: credentials as Credentials,
+      id,
+    });
+  }
+  logger.info(endingFunctionString, {
+    numberOfAccounts: data.length,
+  });
+  await logger.flush();
+};
+
+const refreshYoutubeAccessToken = async ({
+  credentials,
+  id,
+}: {
+  credentials: Credentials;
+  id: string;
+}) => {
+  const supabase = createAdminClient();
+  const logger = new Logger().with({
+    function: "refreshYoutubeAccessToken",
+    id,
+  });
+  try {
+    logger.info(startingFunctionString);
+
+    youtubeAuthClient.setCredentials(credentials);
+    const { credentials: updatedCredentials } =
+      await youtubeAuthClient.refreshAccessToken();
+
+    const { error } = await supabase
+      .from("youtube-channels")
+      .update({
+        credentials: { ...updatedCredentials },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+    if (error) {
+      logger.error(errorString, { error: error.message });
+    }
+
+    logger.info(endingFunctionString);
+  } catch (error) {
+    logger.error(errorString, {
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+    });
+  } finally {
+    await logger.flush();
+  }
 };

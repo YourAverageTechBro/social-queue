@@ -96,9 +96,10 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
     ? await Promise.all(
         youtubeChannels?.map(
           async (channel): Promise<YoutubeChannelWithVideoRestrictions> => {
-            const { thumbnail } = await getYoutubeChannelInfo(
+            const channelInfo = await getYoutubeChannelInfo(
               channel.credentials as Credentials
             );
+            const thumbnail = channelInfo?.thumbnail;
             return {
               ...channel,
               profile_picture_path:
@@ -106,7 +107,7 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
               min_video_duration: 3,
               max_video_duration: 60,
               max_video_size: 1024 * 1024 * 1024 * 256,
-              error: "",
+              error: "Please reconnect your Youtube Channel",
             };
           }
         )

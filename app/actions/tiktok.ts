@@ -572,7 +572,7 @@ export const refreshTikTokAccessTokens = async () => {
     throw error;
   }
   for (let i = 0; i < data.length; i++) {
-    const { refresh_token, id } = data[0];
+    const { refresh_token, id } = data[i];
     await refreshTikTokAccessToken({ refreshToken: refresh_token, id });
   }
   logger.info(endingFunctionString, {
@@ -626,6 +626,7 @@ const refreshTikTokAccessToken = async ({
     .update({
       refresh_token,
       access_token,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", id);
   if (updateError) {
