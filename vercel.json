@@ -5,6 +5,10 @@
       "schedule": "0 17 * * *"
     },
     {
+      "path": "/api/cron/refresh-youtube-tokens",
+      "schedule": "0 17 * * *"
+    },
+    {
       "path": "/api/cron/github-star-count",
       "schedule": "0 17 * * *"
     }

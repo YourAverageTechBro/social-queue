@@ -16,6 +16,7 @@ export type Database = {
           facebook_page_id: string
           id: string
           instagram_business_account_id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -24,6 +25,7 @@ export type Database = {
           facebook_page_id: string
           id?: string
           instagram_business_account_id: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -32,6 +34,7 @@ export type Database = {
           facebook_page_id?: string
           id?: string
           instagram_business_account_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -193,6 +196,7 @@ export type Database = {
           created_at: string
           id: string
           refresh_token: string
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -200,6 +204,7 @@ export type Database = {
           created_at?: string
           id: string
           refresh_token: string
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -207,6 +212,7 @@ export type Database = {
           created_at?: string
           id?: string
           refresh_token?: string
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -295,6 +301,7 @@ export type Database = {
           created_at: string
           credentials: Json
           id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -302,6 +309,7 @@ export type Database = {
           created_at?: string
           credentials: Json
           id: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -309,6 +317,7 @@ export type Database = {
           created_at?: string
           credentials?: Json
           id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
