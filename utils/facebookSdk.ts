@@ -73,7 +73,9 @@ export const getInstagramAccounts = ({
       } else {
         logger.info("Saving instagram accounts", response.data);
         await logger.flush();
-        onSuccessCallback(response.data);
+        onSuccessCallback(
+          response.data.filter((account) => account.instagram_business_account)
+        );
       }
     }
   );
@@ -82,7 +84,7 @@ export const getInstagramAccounts = ({
 export type InstagramAccount = {
   access_token: string;
   id: string;
-  instagram_business_account: { id: string };
+  instagram_business_account?: { id: string };
   name: string;
   picture: { data: { url: string } };
 };
