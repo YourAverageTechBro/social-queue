@@ -75,16 +75,13 @@ export default function PricingTableClientComponent({
           <div className="flex items-baseline text-4xl font-bold mb-2 gap-4">
             <div>
               <span>
-                $
-                {Math.round(
-                  (isYearly ? yearlyPriceAmount : monthlyPriceAmount) / 100
-                )}
-                /{isYearly ? "year" : "month"}
+                ${(isYearly ? yearlyPriceAmount : monthlyPriceAmount) / 100}/
+                {isYearly ? "year" : "month"}
               </span>
             </div>
             {isYearly && (
               <div className="flex items-baseline text-lg font-semibold mb-2 text-gray-400">
-                (${yearlyPriceAmount / 12 / 100}/month)
+                (${Math.round(yearlyPriceAmount / 12 / 100)}/month)
               </div>
             )}
           </div>
@@ -108,7 +105,11 @@ export default function PricingTableClientComponent({
             </div>
           ) : (
             <form action={createCheckoutSession}>
-              <input type="hidden" name="priceId" value={yearlyPrice.id} />
+              <input
+                type="hidden"
+                name="priceId"
+                value={isYearly ? yearlyPrice.id : monthlyPrice.id}
+              />
               <Button type="submit">Upgrade Now</Button>
             </form>
           )}
