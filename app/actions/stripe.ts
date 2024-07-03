@@ -54,6 +54,7 @@ export async function createCheckoutSession(data: FormData): Promise<void> {
         quantity: 1,
       },
     ],
+    customer_email: email,
     success_url: `${headers().get(
       "origin"
     )}/successful-purchase?session_id={CHECKOUT_SESSION_ID}`,

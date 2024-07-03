@@ -28,10 +28,6 @@ export default function HeaderBarClientComponent({
       {
         name: "Create Post",
         href: "/create-post",
-      },
-      {
-        name: "Upgrade",
-        href: "/pricing",
       }
     );
   } else {
@@ -45,6 +41,11 @@ export default function HeaderBarClientComponent({
     navigation.push({
       name: "Manage Subscription",
       href: "/manage-subscription",
+    });
+  } else {
+    navigation.push({
+      name: "Upgrade",
+      href: "/pricing",
     });
   }
 
