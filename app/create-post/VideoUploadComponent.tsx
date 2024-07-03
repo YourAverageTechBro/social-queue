@@ -756,7 +756,7 @@ export default function VideoUploadComponent({
                   }
                   ${
                     tiktokAccountIdToProcessingState[account.id]?.state ===
-                      "processing" && "text-orange-4000"
+                      "processing" && "text-orange-400"
                   }
                 `}
                 >
