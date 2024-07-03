@@ -452,10 +452,13 @@ export default function VideoUploadComponent({
           message: "Processing",
         },
       });
+      const caption = showWatermark
+        ? `${instagramCaption} — posted from SocialQueue.ai`
+        : instagramCaption;
       createInstagramContainer({
         instagramBusinessAccountId: account.instagram_business_account_id,
         filePath,
-        caption: `${instagramCaption} — posted from SocialQueue.ai`,
+        caption,
         userId,
         postType: file.type.includes("video") ? "video" : "image",
         isCarouselItem: false,
@@ -503,9 +506,12 @@ export default function VideoUploadComponent({
           message: "Processing",
         },
       });
+      const caption = showWatermark
+        ? `${tiktokCaption} — posted from SocialQueue.ai`
+        : tiktokCaption;
       uploadTikTokPost({
         userId,
-        caption: `${tiktokCaption} — posted from SocialQueue.ai`,
+        caption,
         autoAddMusic: tiktokAutoAddMusicToPhotos,
         brandOrganicToggle: tiktokIsYourBrandPromotion,
         brandContentToggle: tiktokIsBrandedContent,
@@ -524,7 +530,7 @@ export default function VideoUploadComponent({
         }).then(() => {
           writeTikTokPostToSupabase({
             userId,
-            caption: `${tiktokCaption} — posted from SocialQueue.ai`,
+            caption,
             publishId,
             privacyLevel: "SELF_ONLY",
             disableDuet,
@@ -550,9 +556,12 @@ export default function VideoUploadComponent({
         },
       });
       const formData = new FormData();
+      const title = showWatermark
+        ? `${youtubeTitle} — posted from SocialQueue.ai`
+        : youtubeTitle;
       formData.append("youtubeChannelId", channel.id);
       formData.append("video", file);
-      formData.append("title", `${youtubeTitle} — posted from SocialQueue.ai`);
+      formData.append("title", title);
       formData.append("userId", userId);
       formData.append("parentSocialMediaPostId", socialMediaPostId);
       formData.append("isPrivate", privateYoutube.toString());
@@ -1038,7 +1047,7 @@ export default function VideoUploadComponent({
               enabled={showWatermark}
               setEnabled={setShowWatermark}
               toolTipId="show-watermark"
-              toolTipString={`On a free account all posts will be posted with "posted with SocialQueue.ai" added to the end of your caption or title.
+              toolTipString={`On a free account all posts will be posted with "posted from SocialQueue.ai" added to the end of your caption or title.
               tou can turn off the watermark by upgrading to a paid account.`}
               disabled={!isProUser}
             />
