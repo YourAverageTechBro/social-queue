@@ -5,9 +5,9 @@ import type { Stripe } from "stripe";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
-import PostHogClient from "@/lib/posthog";
 import { getUser } from "@/app/actions/user";
 import { Logger } from "next-axiom";
+import { trackServerEvent } from "@/utils/posthog/utils";
 
 export async function createCheckoutSession(data: FormData): Promise<void> {
   const log = new Logger().with({
@@ -22,21 +22,15 @@ export async function createCheckoutSession(data: FormData): Promise<void> {
   const prod = process.env.NODE_ENV === "production";
   if (prod) {
     if (email) {
-      const posthog = PostHogClient();
-      posthog.identify({
-        distinctId: email,
-        properties: {
-          email: email,
+      await trackServerEvent({
+        email,
+        eventName: "initiate_checkout",
+        args: {
+          email,
+          userId: user.id,
+          priceId,
         },
       });
-      posthog.capture({
-        distinctId: email,
-        event: "initiate_checkout",
-        properties: {
-          email: email,
-        },
-      });
-      await posthog.shutdown();
     }
   }
 
@@ -50,6 +44,8 @@ export async function createCheckoutSession(data: FormData): Promise<void> {
     mode: "subscription",
     metadata: {
       userId: user.id,
+      priceId,
+      userEmail: email ?? "",
     },
     line_items: [
       {
