@@ -6,13 +6,10 @@ import { Toaster } from "react-hot-toast";
 import { AxiomWebVitals } from "next-axiom";
 import HeaderBar from "@/components/common/HeaderBar";
 import { Metadata } from "next";
-
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+import { getURL } from "@/utils/utils";
 
 const metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: getURL(),
   title: "Social Media Post Management For Everyone | SocialQueue.ai",
   description:
     "An open source tool that makes it easier for you to upload your content to every social media platform out there.",
@@ -42,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
     publisher: "SocialQueue.ai",
     robots: metadata.robots,
     icons: { icon: metadata.favicon },
-    metadataBase: metadata.metadataBase,
+    metadataBase: new URL(metadata.metadataBase),
     openGraph: {
       url: metadata.metadataBase,
       title: metadata.title,
