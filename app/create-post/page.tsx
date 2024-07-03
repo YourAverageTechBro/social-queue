@@ -6,7 +6,7 @@ import VideoUploadComponent from "./VideoUploadComponent";
 export const maxDuration = 300;
 
 export default async function PostPage() {
-  const { user } = await getUser();
+  const { isProUser, user } = await getUser();
   if (!user) {
     redirect("/login");
   }
@@ -20,6 +20,7 @@ export default async function PostPage() {
         userId={user.id}
         tiktokAccounts={tiktokAccounts}
         youtubeChannels={youtubeChannels}
+        isProUser={isProUser}
       />
     </div>
   );
