@@ -11,19 +11,14 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fetchAccessTokenForInstagramBusinessAccountId } from "./socialMediaPosts";
 
-export const saveInstagramAccount = async ({
-  appScopedUserId,
-  accessToken,
-  instagramBusinessAccountId,
-  facebookPageId,
-  userId,
-}: {
-  appScopedUserId: string;
-  accessToken: string;
-  instagramBusinessAccountId: string;
-  facebookPageId: string;
-  userId: string;
-}) => {
+export const saveInstagramAccount = async (prevState: any, data: FormData) => {
+  const appScopedUserId = data.get("appScopedUserId") as string;
+  const accessToken = data.get("accessToken") as string;
+  const instagramBusinessAccountId = data.get(
+    "instagramBusinessAccountId"
+  ) as string;
+  const facebookPageId = data.get("facebookPageId") as string;
+  const userId = data.get("userId") as string;
   let logger = new Logger().with({
     appScopedUserId,
     accessToken,
@@ -39,6 +34,8 @@ export const saveInstagramAccount = async ({
       userId,
     });
     if (isAlreadySaved) {
+      logger.info("Instagram account already saved");
+      await logger.flush();
       return;
     }
     const { longLivedPageAccessToken } = await fetchLongLivedPageAccessToken({

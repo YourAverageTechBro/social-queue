@@ -1,27 +1,29 @@
 "use client";
 
-import { Button } from "@/components/common/Button";
 import Icons from "@/components/common/Icons";
 import Modal from "@/components/common/Modal";
-import { saveInstagramAccounts, loginToFacebook } from "@/utils/facebookSdk";
-import { useLogger } from "next-axiom";
+import {
+  loginToFacebook,
+  InstagramAccount,
+  getInstagramAccounts,
+} from "@/utils/facebookSdk";
 import Link from "next/link";
 import { useState } from "react";
 
 export default function ConnectInstagramAccountButton({
-  userId,
+  setAppScopedUserId,
+  setInstagramAccounts,
 }: {
-  userId: string;
+  setAppScopedUserId: (appScopedUserId: string) => void;
+  setInstagramAccounts: (instagramAccounts: InstagramAccount[]) => void;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const logger = useLogger();
   const facebookLoginCallback = (res: fb.StatusResponse) => {
     if (res.status === "connected") {
       const appScopedUserId = res.authResponse.userID;
-      saveInstagramAccounts({
-        appScopedUserId,
-        logger,
-        userId,
+      setAppScopedUserId(appScopedUserId);
+      getInstagramAccounts({
+        onSuccessCallback: setInstagramAccounts,
       });
     }
   };

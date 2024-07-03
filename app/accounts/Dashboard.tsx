@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { deleteInstagramAccount } from "@/app/actions/instagramAccounts";
+import {
+  deleteInstagramAccount,
+  saveInstagramAccount,
+} from "@/app/actions/instagramAccounts";
 import { useFormState } from "react-dom";
 import { Button } from "@/components/common/Button";
 import Text from "@/components/common/Text";
@@ -20,6 +23,7 @@ import {
   TikTokAccountWithVideoRestrictions,
   YoutubeChannelWithVideoRestrictions,
 } from "../actions/socialMediaAccounts";
+import { InstagramAccount } from "@/utils/facebookSdk";
 
 export default function Dashboard({
   userId,
@@ -48,6 +52,15 @@ export default function Dashboard({
     useFormState(deleteTikTokAccount, {
       error: null,
       data: "",
+    });
+  const [appScopedUserId, setAppScopedUserId] = useState<string>("");
+  const [newInstagramAccounts, setNewInstagramAccounts] = useState<
+    InstagramAccount[]
+  >([]);
+  const [saveInstagramAccountState, saveInstagramAccountFormAction] =
+    useFormState(saveInstagramAccount, {
+      error: null,
+      data: { message: "", instagramBusinessAccountId: "" },
     });
   const [openConfirmDeleteModal, setOpenConfirmDeleteModal] = useState(false);
   const [instagramAccountToDelete, setInstagramAccountToDelete] =
@@ -98,6 +111,22 @@ export default function Dashboard({
       setOpenConfirmDeleteModal(false);
     }
   }, [deleteTikTokAccountState, resetDeleteAccountState]);
+
+  useEffect(() => {
+    if (saveInstagramAccountState?.error) {
+      toast.error(saveInstagramAccountState.error);
+    } else if (saveInstagramAccountState?.data) {
+      if (saveInstagramAccountState.data.instagramBusinessAccountId) {
+        setNewInstagramAccounts((prevAccounts) =>
+          prevAccounts.filter(
+            (account) =>
+              account.instagram_business_account.id !==
+              saveInstagramAccountState.data.instagramBusinessAccountId
+          )
+        );
+      }
+    }
+  }, [saveInstagramAccountState]);
 
   const constructSocialAccountBlock = (
     instagramAccountToDelete: InstagramAccountWithVideoRestrictions | undefined,
@@ -171,7 +200,64 @@ export default function Dashboard({
         <div className="flex flex-col md:flex-row items-center gap-2 mt-4 justify-center">
           <TikTokLoginButton />
           <ConnectYoutubeAccountButton />
-          <ConnectInstagramAccountButton userId={userId} />
+          <ConnectInstagramAccountButton
+            setAppScopedUserId={setAppScopedUserId}
+            setInstagramAccounts={setNewInstagramAccounts}
+          />
+        </div>
+        <div className="flex items-center justify-center flex-wrap gap-2 mt-4">
+          {newInstagramAccounts
+            .filter(
+              (account) =>
+                !instagramAccounts.some(
+                  (existingAccount) =>
+                    existingAccount.instagram_business_account_id ===
+                    account.instagram_business_account.id
+                )
+            )
+            .map((account) => (
+              <form
+                action={saveInstagramAccountFormAction}
+                className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+                key={account.id}
+              >
+                <input
+                  type={"hidden"}
+                  name={"appScopedUserId"}
+                  value={appScopedUserId}
+                />
+                <input
+                  type={"hidden"}
+                  name={"accessToken"}
+                  value={account.access_token}
+                />
+                <input
+                  type={"hidden"}
+                  name={"instagramBusinessAccountId"}
+                  value={account.instagram_business_account.id}
+                />
+                <input
+                  type={"hidden"}
+                  name={"facebookPageId"}
+                  value={account.id}
+                />
+                <input type={"hidden"} name={"userId"} value={userId} />
+
+                <div className="flex items-center gap-2">
+                  <div className="relative w-8 h-8">
+                    <img
+                      src={account.picture.data.url}
+                      alt={account.name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <Icons.instagram className="absolute bottom-[-8px] right-[-8px] w-6 h-6 rounded-full" />
+                  </div>
+                  <p>{account.name} </p>
+                </div>
+
+                <Button type={"submit"}>Connect Account</Button>
+              </form>
+            ))}
         </div>
 
         {instagramAccounts.length +

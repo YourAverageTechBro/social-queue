@@ -1,7 +1,6 @@
 import { Logger } from "next-axiom";
 import { errorString } from "@/utils/logging";
 import toast from "react-hot-toast";
-import { saveInstagramAccount } from "@/app/actions/instagramAccounts";
 
 const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_CLIENT_ID;
 
@@ -50,35 +49,31 @@ export const loginToFacebook = (
   window.FB.login(callback, loginOptions);
 };
 
-export const saveInstagramAccounts = ({
-  logger,
-  appScopedUserId,
-  userId,
+export const getInstagramAccounts = ({
+  onSuccessCallback,
 }: {
-  logger: Logger;
-  appScopedUserId: string;
-  userId: string;
+  onSuccessCallback: (accounts: InstagramAccount[]) => void;
 }) => {
+  const logger = new Logger().with({
+    function: "saveInstagramAccounts",
+  });
   FB.api(
     "/me/accounts",
     "get",
     { fields: "picture{url},name,access_token,instagram_business_account" },
-    (response: { error: FacebookGraphError; data: InstagramAccount[] }) => {
+    async (response: {
+      error: FacebookGraphError;
+      data: InstagramAccount[];
+    }) => {
       if (response.error) {
         logger.error(errorString, response.error);
         toast.error(
           "Sorry, we had an issue connecting to Facebook. Please try again."
         );
       } else {
-        response.data.forEach((account) => {
-          saveInstagramAccount({
-            userId,
-            appScopedUserId,
-            accessToken: account.access_token,
-            instagramBusinessAccountId: account.instagram_business_account.id,
-            facebookPageId: account.id,
-          });
-        });
+        logger.info("Saving instagram accounts", response.data);
+        await logger.flush();
+        onSuccessCallback(response.data);
       }
     }
   );
