@@ -8,26 +8,32 @@ import HeaderBar from "@/components/common/HeaderBar";
 import { Metadata } from "next";
 import { getURL } from "@/utils/utils";
 
-const metadata = {
-  metadataBase: getURL(),
-  title: "Social Media Post Management For Everyone | SocialQueue.ai",
+const meta = {
+  title: "Social Media Management For Everyone | SocialQueue.ai",
   description:
     "An open source tool that makes it easier for you to upload your content to every social media platform out there.",
   cardImage: "/opengraph-image.png",
-  robots: "follow, index",
   favicon: "/favicon.ico",
+  url: getURL(),
+  robots: "follow, index",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: metadata.title,
-    description: metadata.description,
+    title: meta.title,
+    description: meta.description,
     referrer: "origin-when-cross-origin",
     keywords: [
-      "Social media",
-      "social media management",
-      "social media marketing",
-      "social media management software",
+      "Social media management",
+      "Social media management software",
+      "Social media management tool",
+      "Social media management software",
+      "Social media management tool",
+      "Social media management software",
+      "Social media management tool",
+      "Social Media Marketing",
+      "Organic Social Media",
+      "Social Media",
     ],
     authors: [
       {
@@ -37,16 +43,16 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     creator: "SocialQueue.ai",
     publisher: "SocialQueue.ai",
-    robots: metadata.robots,
-    icons: { icon: metadata.favicon },
-    metadataBase: new URL(metadata.metadataBase),
+    robots: meta.robots,
+    icons: { icon: meta.favicon },
+    metadataBase: new URL(meta.url),
     openGraph: {
-      url: metadata.metadataBase,
-      title: metadata.title,
-      description: metadata.description,
-      images: [metadata.cardImage],
+      url: meta.url,
+      title: meta.title,
+      description: meta.description,
+      images: [meta.cardImage],
       type: "website",
-      siteName: metadata.title,
+      siteName: meta.title,
     },
   };
 }
