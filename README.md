@@ -1,5 +1,5 @@
 <a href="https://socialqueue.ai">
-  <img alt="Social Queue" src="./public/social-queue-logo.png">
+  <img alt="Social Queue" src=https://github.com/YourAverageTechBro/social-queue/raw/main/public/logo.png">
   <h1>Social Queue</h1>
 </a>
 
