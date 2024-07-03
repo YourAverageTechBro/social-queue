@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/refresh-tiktok-tokens",
-      "schedule": "0 15,3 * * *"
+      "schedule": "0 17,5 * * *"
     },
     {
       "path": "/api/cron/refresh-youtube-tokens",
