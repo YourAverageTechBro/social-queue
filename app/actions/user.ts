@@ -34,7 +34,7 @@ export const getUser = async () => {
     isProUser = data?.[0] ? true : false;
   }
 
-  const stripeCustomerId = user?.app_metadata.stripe_customer_id;
+  const stripeCustomerId = user?.app_metadata.stripeCustomerId;
 
   return { user, isProUser, stripeCustomerId };
 };
