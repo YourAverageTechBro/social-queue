@@ -62,10 +62,10 @@ export const saveInstagramAccount = async ({
     }
     logger.info(endingFunctionString);
   } catch (error) {
-    await logger.flush();
     logger.error(errorString, {
       error: error instanceof Error ? error.message : JSON.stringify(error),
     });
+    await logger.flush();
     return {
       error:
         "Sorry, we ran into an error connecting your Instagram account. Please try again.",

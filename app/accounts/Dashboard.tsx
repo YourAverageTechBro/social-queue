@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { deleteInstagramAccount } from "@/app/actions/instagramAccounts";
 import { useFormState } from "react-dom";
 import { Button } from "@/components/common/Button";
@@ -63,32 +63,41 @@ export default function Dashboard({
     }
   }, [authError]);
 
+  const resetDeleteAccountState = useCallback(() => {
+    setInstagramAccountToDelete(undefined);
+    setTiktokAccountToDelete(undefined);
+    setYoutubeChannelToDelete(undefined);
+  }, []);
+
   useEffect(() => {
     if (deleteInstagramAccountState.error) {
       toast.error(deleteInstagramAccountState.error);
     } else if (deleteInstagramAccountState.data) {
       toast.success(deleteInstagramAccountState.data);
+      resetDeleteAccountState();
       setOpenConfirmDeleteModal(false);
     }
-  }, [deleteInstagramAccountState]);
+  }, [deleteInstagramAccountState, resetDeleteAccountState]);
 
   useEffect(() => {
     if (deleteYoutubeChannelState.error) {
       toast.error(deleteYoutubeChannelState.error);
     } else if (deleteYoutubeChannelState.data) {
       toast.success(deleteYoutubeChannelState.data);
+      resetDeleteAccountState();
       setOpenConfirmDeleteModal(false);
     }
-  }, [deleteYoutubeChannelState]);
+  }, [deleteYoutubeChannelState, resetDeleteAccountState]);
 
   useEffect(() => {
     if (deleteTikTokAccountState.error) {
       toast.error(deleteTikTokAccountState.error);
     } else if (deleteTikTokAccountState.data) {
       toast.success(deleteTikTokAccountState.data);
+      resetDeleteAccountState();
       setOpenConfirmDeleteModal(false);
     }
-  }, [deleteTikTokAccountState]);
+  }, [deleteTikTokAccountState, resetDeleteAccountState]);
 
   const constructSocialAccountBlock = (
     instagramAccountToDelete: InstagramAccountWithVideoRestrictions | undefined,
