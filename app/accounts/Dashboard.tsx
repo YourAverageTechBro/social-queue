@@ -12,7 +12,6 @@ import toast from "react-hot-toast";
 import TikTokLoginButton from "@/app/accounts/TikTokLoginButton";
 import ConnectInstagramAccountButton from "@/app/accounts/ConnectInstagramAccountButton";
 import ConnectYoutubeAccountButton from "./ConnectYoutubeAccountButton";
-import { Tables } from "@/types/supabase";
 import Icons from "@/components/common/Icons";
 import { deleteYoutubeChannel } from "../actions/youtube";
 import { XCircleIcon } from "@heroicons/react/24/solid";
@@ -209,6 +208,7 @@ export default function Dashboard({
           {newInstagramAccounts
             .filter(
               (account) =>
+                "instagram_business_account" in account &&
                 !instagramAccounts.some(
                   (existingAccount) =>
                     existingAccount.instagram_business_account_id ===
