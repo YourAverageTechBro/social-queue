@@ -119,7 +119,7 @@ export default function Dashboard({
         setNewInstagramAccounts((prevAccounts) =>
           prevAccounts.filter(
             (account) =>
-              account.instagram_business_account.id !==
+              account.instagram_business_account?.id !==
               saveInstagramAccountState.data.instagramBusinessAccountId
           )
         );
@@ -208,11 +208,10 @@ export default function Dashboard({
           {newInstagramAccounts
             .filter(
               (account) =>
-                "instagram_business_account" in account &&
                 !instagramAccounts.some(
                   (existingAccount) =>
                     existingAccount.instagram_business_account_id ===
-                    account.instagram_business_account.id
+                    account.instagram_business_account?.id
                 )
             )
             .map((account) => (
@@ -234,7 +233,7 @@ export default function Dashboard({
                 <input
                   type={"hidden"}
                   name={"instagramBusinessAccountId"}
-                  value={account.instagram_business_account.id}
+                  value={account.instagram_business_account?.id}
                 />
                 <input
                   type={"hidden"}
