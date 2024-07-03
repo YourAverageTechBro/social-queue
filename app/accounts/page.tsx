@@ -3,6 +3,8 @@ import { getUser } from "@/app/actions/user";
 import Dashboard from "@/app/accounts/Dashboard";
 import { fetchUserConnectSocialMediaAccounts } from "../actions/socialMediaAccounts";
 
+export const maxDuration = 300;
+
 export default async function Page({
   searchParams,
 }: {
