@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/common/Button";
 import Icons from "@/components/common/Icons";
 import Modal from "@/components/common/Modal";
 import {
@@ -65,21 +66,26 @@ export default function ConnectInstagramAccountButton({
             Social Queue.
           </p>
 
-          <button
-            onClick={() => {
-              loginToFacebook(facebookLoginCallback, {
-                scope:
-                  "business_management,pages_show_list,instagram_basic,instagram_content_publish",
-              });
-            }}
-            className="p-2 rounded-full flex items-center gap-2 bg-gradient-to-r from-purple-400 via-pink-500 to-orange-400 text-white"
-          >
-            <Icons.instagram className="h-6 w-6 inline-block" />
-            <p className="font-bold text-gray-100">
-              {" "}
-              Connect Instagram Account
-            </p>
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                loginToFacebook(facebookLoginCallback, {
+                  scope:
+                    "business_management,pages_show_list,instagram_basic,instagram_content_publish",
+                });
+              }}
+              className="p-2 rounded-full flex items-center gap-2 bg-gradient-to-r from-purple-400 via-pink-500 to-orange-400 text-white"
+            >
+              <Icons.instagram className="h-6 w-6 inline-block" />
+              <p className="font-bold text-gray-100">
+                {" "}
+                Connect Instagram Account
+              </p>
+            </button>
+            <Button intent="secondary" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+          </div>
         </div>
       </Modal>
     </>
