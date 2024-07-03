@@ -75,8 +75,11 @@ export default function PricingTableClientComponent({
           <div className="flex items-baseline text-4xl font-bold mb-2 gap-4">
             <div>
               <span>
-                ${(isYearly ? yearlyPriceAmount : monthlyPriceAmount) / 100}/
-                {isYearly ? "year" : "month"}
+                $
+                {Math.round(
+                  (isYearly ? yearlyPriceAmount : monthlyPriceAmount) / 100
+                )}
+                /{isYearly ? "year" : "month"}
               </span>
             </div>
             {isYearly && (
