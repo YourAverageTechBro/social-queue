@@ -107,7 +107,7 @@ export const fetchUserConnectSocialMediaAccounts = async (userId: string) => {
               min_video_duration: 3,
               max_video_duration: 60,
               max_video_size: 1024 * 1024 * 1024 * 256,
-              error: "Please reconnect your Youtube Channel",
+              error: channelInfo ? "" : "Please reconnect your Youtube Channel",
             };
           }
         )

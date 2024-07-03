@@ -14,22 +14,25 @@ export default function Toggle({
   label,
   toolTipString,
   toolTipId,
+  disabled,
 }: {
   enabled: boolean;
   setEnabled: Dispatch<SetStateAction<boolean>>;
   label?: string;
   toolTipString?: string;
   toolTipId?: string;
+  disabled?: boolean;
 }) {
   return (
     <>
       <Switch.Group as="div" className="flex items-center">
         <Switch
           checked={enabled}
+          disabled={disabled}
           onChange={setEnabled}
           className={classNames(
             enabled ? "bg-orange-600" : "bg-gray-200",
-            "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
+            "disabled:opacity-50 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
           )}
         >
           <span
@@ -48,7 +51,7 @@ export default function Toggle({
               data-tooltip-id={toolTipId}
               data-tooltip-place="top"
             >
-              <InformationCircleIcon className={"h-4 w-4 text-orange-950"} />
+              <InformationCircleIcon className={"h-4 w-4 text-orange-600"} />
             </span>
           )}
         </Switch.Label>

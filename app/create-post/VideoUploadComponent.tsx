@@ -98,11 +98,13 @@ export default function VideoUploadComponent({
   tiktokAccounts,
   youtubeChannels,
   userId,
+  isProUser,
 }: {
   instagramAccounts: InstagramAccountWithVideoRestrictions[];
   tiktokAccounts: TikTokAccountWithVideoRestrictions[];
   youtubeChannels: YoutubeChannelWithVideoRestrictions[];
   userId: string;
+  isProUser: boolean;
 }) {
   const [disableDuet, setDisableDuet] = useState<boolean>(false);
   const [disableComment, setDisableComment] = useState<boolean>(false);
@@ -178,6 +180,7 @@ export default function VideoUploadComponent({
     value: "PUBLIC_TO_EVERYONE",
   });
   const [tiktokTitle, setTiktokTitle] = useState<string>("");
+  const [showWatermark, setShowWatermark] = useState<boolean>(true);
   let logger = useLogger();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -449,10 +452,13 @@ export default function VideoUploadComponent({
           message: "Processing",
         },
       });
+      const caption = showWatermark
+        ? `${instagramCaption} — posted from SocialQueue.ai`
+        : instagramCaption;
       createInstagramContainer({
         instagramBusinessAccountId: account.instagram_business_account_id,
         filePath,
-        caption: instagramCaption,
+        caption,
         userId,
         postType: file.type.includes("video") ? "video" : "image",
         isCarouselItem: false,
@@ -471,7 +477,7 @@ export default function VideoUploadComponent({
               saveInstagramId({
                 instagramMediaId,
                 parentSocialMediaPostId: socialMediaPostId,
-                caption: instagramCaption ?? "",
+                caption: `${instagramCaption} — posted from SocialQueue.ai`,
                 userId,
                 instagramAccountId: account.id,
               });
@@ -500,9 +506,12 @@ export default function VideoUploadComponent({
           message: "Processing",
         },
       });
+      const caption = showWatermark
+        ? `${tiktokCaption} — posted from SocialQueue.ai`
+        : tiktokCaption;
       uploadTikTokPost({
         userId,
-        caption: tiktokCaption,
+        caption,
         autoAddMusic: tiktokAutoAddMusicToPhotos,
         brandOrganicToggle: tiktokIsYourBrandPromotion,
         brandContentToggle: tiktokIsBrandedContent,
@@ -521,7 +530,7 @@ export default function VideoUploadComponent({
         }).then(() => {
           writeTikTokPostToSupabase({
             userId,
-            caption: tiktokCaption,
+            caption,
             publishId,
             privacyLevel: "SELF_ONLY",
             disableDuet,
@@ -547,9 +556,12 @@ export default function VideoUploadComponent({
         },
       });
       const formData = new FormData();
+      const title = showWatermark
+        ? `${youtubeTitle} — posted from SocialQueue.ai`
+        : youtubeTitle;
       formData.append("youtubeChannelId", channel.id);
       formData.append("video", file);
-      formData.append("title", youtubeTitle);
+      formData.append("title", title);
       formData.append("userId", userId);
       formData.append("parentSocialMediaPostId", socialMediaPostId);
       formData.append("isPrivate", privateYoutube.toString());
@@ -880,7 +892,7 @@ export default function VideoUploadComponent({
                   "Check out thecontentmarketingblueprint.com for help with social media marketing!"
                 }
                 required={true}
-                maxLength={100}
+                maxLength={70}
                 type={"text"}
                 value={youtubeTitle}
                 setValue={setYoutubeTitle}
@@ -1029,30 +1041,41 @@ export default function VideoUploadComponent({
               </p>
             </div>
           )}
-          <Button
-            disabled={
-              (selectedInstagramAccounts.length === 0 &&
-                selectedYoutubeChannels.length === 0 &&
-                selectedTiktokAccounts.length === 0) ||
-              files.length === 0 ||
-              (selectedYoutubeChannels.length > 0 &&
-                youtubeTitle.length === 0) ||
-              (selectedYoutubeChannels.length > 0 &&
-                youtubeTitle.length > 100) ||
-              Object.values(instagramAccountIdToProcessingState).some(
-                (state) => state.state === "processing"
-              ) ||
-              Object.values(youtubeChannelIdToProcessingState).some(
-                (state) => state.state === "processing"
-              ) ||
-              Object.values(tiktokAccountIdToProcessingState).some(
-                (state) => state.state === "processing"
-              )
-            }
-            type={"submit"}
-          >
-            Upload Post
-          </Button>
+          <div className="flex items-center justify-between w-full">
+            <Toggle
+              label="Post with watermark"
+              enabled={showWatermark}
+              setEnabled={setShowWatermark}
+              toolTipId="show-watermark"
+              toolTipString={`On a free account all posts will be posted with "posted from SocialQueue.ai" added to the end of your caption or title.
+              tou can turn off the watermark by upgrading to a paid account.`}
+              disabled={!isProUser}
+            />
+            <Button
+              disabled={
+                (selectedInstagramAccounts.length === 0 &&
+                  selectedYoutubeChannels.length === 0 &&
+                  selectedTiktokAccounts.length === 0) ||
+                files.length === 0 ||
+                (selectedYoutubeChannels.length > 0 &&
+                  youtubeTitle.length === 0) ||
+                (selectedYoutubeChannels.length > 0 &&
+                  youtubeTitle.length > 100) ||
+                Object.values(instagramAccountIdToProcessingState).some(
+                  (state) => state.state === "processing"
+                ) ||
+                Object.values(youtubeChannelIdToProcessingState).some(
+                  (state) => state.state === "processing"
+                ) ||
+                Object.values(tiktokAccountIdToProcessingState).some(
+                  (state) => state.state === "processing"
+                )
+              }
+              type={"submit"}
+            >
+              Upload Post
+            </Button>
+          </div>
         </form>
       </div>
     </div>
