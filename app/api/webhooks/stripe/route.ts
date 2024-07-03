@@ -22,7 +22,6 @@ export const POST = withAxiom(async (req: AxiomRequest) => {
   });
   let event: Stripe.Event;
   let text;
-  const supabase = createAdminClient();
   try {
     text = await req.text();
     event = stripe.webhooks.constructEvent(
@@ -108,18 +107,22 @@ const handleCheckoutSessionCompletedEvent = async (
   log: Logger
 ) => {
   const supabase = createAdminClient();
-  log.info(startingFunctionString, {
-    text,
-    path: "webhooks/stripe",
-    method: "POST",
-    eventType: event.type,
-  });
   const data = event.data.object as Stripe.Checkout.Session;
   const { priceId, userEmail, userId } = data.metadata as {
     priceId: string;
     userEmail: string;
     userId: string;
   };
+  log = log.with({
+    text,
+    path: "webhooks/stripe",
+    method: "POST",
+    eventType: event.type,
+    priceId,
+    userEmail,
+    userId,
+  });
+  log.info(startingFunctionString);
 
   if (
     priceId !== STRIPE_MONTHLY_PRICE_ID &&
@@ -161,11 +164,7 @@ const handleCheckoutSessionCompletedEvent = async (
       stripeCustomerId,
     },
   });
-  log.info(endingFunctionString, {
-    text,
-    eventType: event.type,
-    stripeCustomerId,
-  });
+  log.info(endingFunctionString);
 };
 
 const handleCustomerSubscriptionDeletedEvent = async (
@@ -174,13 +173,16 @@ const handleCustomerSubscriptionDeletedEvent = async (
   log: Logger
 ) => {
   const supabase = createAdminClient();
-  log.info(startingFunctionString, {
-    text,
-    eventType: event.type,
-  });
   const data = event.data.object as Stripe.Subscription;
   const stripeCustomerId = data.customer as string;
   const priceId = data.items.data[0].price.id;
+  log = log.with({
+    stripeCustomerId,
+    priceId,
+    text,
+    eventType: event.type,
+  });
+  log.info(startingFunctionString);
   if (
     priceId !== STRIPE_MONTHLY_PRICE_ID &&
     priceId !== STRIPE_YEARLY_PRICE_ID
@@ -194,11 +196,7 @@ const handleCustomerSubscriptionDeletedEvent = async (
   if (error) {
     throw error;
   }
-  log.info(endingFunctionString, {
-    text,
-    eventType: event.type,
-    stripeCustomerId,
-  });
+  log.info(endingFunctionString);
 };
 
 const handleInvoicePaymentFailedEvent = async (
@@ -207,13 +205,17 @@ const handleInvoicePaymentFailedEvent = async (
   log: Logger
 ) => {
   const supabase = createAdminClient();
-  log.info("Starting to handle invoice.payment_failed", {
-    text,
-    eventType: event.type,
-  });
+
   const data = event.data.object as Stripe.Invoice;
   const stripeCustomerId = data.customer as string;
   const priceId = data.lines.data[0].price?.id;
+  log = log.with({
+    text,
+    eventType: event.type,
+    stripeCustomerId,
+    priceId,
+  });
+  log.info(startingFunctionString);
   if (
     !priceId ||
     (priceId !== STRIPE_MONTHLY_PRICE_ID && priceId !== STRIPE_YEARLY_PRICE_ID)
@@ -227,9 +229,5 @@ const handleInvoicePaymentFailedEvent = async (
   if (error) {
     throw error;
   }
-  log.info(endingFunctionString, {
-    text,
-    eventType: event.type,
-    stripeCustomerId,
-  });
+  log.info(endingFunctionString);
 };
