@@ -8,6 +8,7 @@ import { stripe } from "@/lib/stripe";
 import { getUser } from "@/app/actions/user";
 import { Logger } from "next-axiom";
 import { trackServerEvent } from "@/utils/posthog/utils";
+import { getURL } from "@/utils/utils";
 
 export async function createCheckoutSession(data: FormData): Promise<void> {
   const log = new Logger().with({
@@ -71,7 +72,7 @@ export const redirectToStripeCustomerPortal = async (data: FormData) => {
   const stripeCustomerId = data.get("stripeCustomerId") as string;
   const session = await stripe.billingPortal.sessions.create({
     customer: stripeCustomerId,
-    return_url: `${headers().get("origin")}/accounts`,
+    return_url: `${getURL()}/accounts`,
   });
   redirect(session.url as string);
 };
