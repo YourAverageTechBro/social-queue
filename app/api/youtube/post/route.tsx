@@ -18,6 +18,8 @@ export const POST = withAxiom(async (req: AxiomRequest) => {
   const isPrivate = body.get("isPrivate") === "true";
   const parentSocialMediaPostId = body.get("parentSocialMediaPostId") as string;
   const logger = req.log.with({
+    path: "/api/youtube/post",
+    method: "POST",
     userId,
     title,
     youtubeChannelId,
