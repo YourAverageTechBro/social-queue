@@ -560,7 +560,7 @@ export default function VideoUploadComponent({
         ? `${youtubeTitle} — posted from SocialQueue.ai`
         : youtubeTitle;
       formData.append("youtubeChannelId", channel.id);
-      formData.append("video", file);
+      formData.append("videoPath", filePath);
       formData.append("title", title);
       formData.append("userId", userId);
       formData.append("parentSocialMediaPostId", socialMediaPostId);
