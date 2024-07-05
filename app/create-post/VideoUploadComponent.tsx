@@ -568,25 +568,37 @@ export default function VideoUploadComponent({
       fetch("/api/youtube/post", {
         method: "POST",
         body: formData,
-      }).then((resp) => {
-        if (resp.ok) {
-          setYoutubeChannelIdToProcessingState({
-            [channel.id]: {
-              state: "posted",
-              message: "Posted",
-            },
-          });
-        } else {
-          resp.json().then((data: { message: string }) => {
+      })
+        .then((resp) => {
+          if (resp.ok) {
             setYoutubeChannelIdToProcessingState({
               [channel.id]: {
-                state: "error",
-                message: data.message,
+                state: "posted",
+                message: "Posted",
               },
             });
+          } else {
+            resp.json().then((data: { message: string }) => {
+              setYoutubeChannelIdToProcessingState({
+                [channel.id]: {
+                  state: "error",
+                  message: data.message,
+                },
+              });
+            });
+          }
+        })
+        .catch((error) => {
+          logger.error(errorString, {
+            error: error instanceof Error ? error.message : error,
           });
-        }
-      });
+          setYoutubeChannelIdToProcessingState({
+            [channel.id]: {
+              state: "error",
+              message: error instanceof Error ? error.message : "Unknown error",
+            },
+          });
+        });
     });
   };
 
