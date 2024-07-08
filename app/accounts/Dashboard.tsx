@@ -135,7 +135,7 @@ export default function Dashboard({
     if (instagramAccountToDelete) {
       return (
         <div
-          className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+          className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col items-center gap-2`}
           key={instagramAccountToDelete.instagram_business_account_id}
         >
           <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export default function Dashboard({
     } else if (tiktokAccountToDelete) {
       return (
         <div
-          className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+          className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col items-center gap-2`}
           key={tiktokAccountToDelete.id}
         >
           <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export default function Dashboard({
     } else if (youtubeChannelToDelete) {
       return (
         <div
-          className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+          className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col items-center gap-2`}
           key={youtubeChannelToDelete.id}
         >
           <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export default function Dashboard({
             .map((account) => (
               <form
                 action={saveInstagramAccountFormAction}
-                className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+                className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col items-center gap-2`}
                 key={account.id}
               >
                 <input
@@ -272,7 +272,7 @@ export default function Dashboard({
             >
               {instagramAccounts.map((account) => (
                 <div
-                  className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+                  className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col items-center gap-2`}
                   key={account.instagram_business_account_id}
                 >
                   <div className="flex items-center gap-2">
@@ -299,7 +299,7 @@ export default function Dashboard({
               ))}
               {youtubeChannels.map((channel) => (
                 <div
-                  className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+                  className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col items-center gap-2`}
                   key={channel.id}
                 >
                   <div className="flex items-center gap-2">
@@ -326,7 +326,7 @@ export default function Dashboard({
               ))}
               {tiktokAccounts.map((account) => (
                 <div
-                  className={`p-4 rounded-lg bg-gray-800 flex flex-col items-center gap-2`}
+                  className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col items-center gap-2`}
                   key={account.id}
                 >
                   <div className="flex items-center gap-2">

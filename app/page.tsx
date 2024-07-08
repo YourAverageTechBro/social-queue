@@ -83,11 +83,11 @@ const UsVsCompetitors = () => {
     <div className="mt-8 p-2">
       <Text intent={"title"} text={"Social Queue vs Competitors"} />
       <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-4">
-        <div className="bg-gray-900 p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
+        <div className="bg-secondaryBackground-light dark:bg-secondaryBackground-dark p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
           <Text intent={"title"} text={"Competitors 🤢"} />
           <FeatureTable features={competitorFeatures} type="competitor" />
         </div>
-        <div className="bg-gray-900 p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
+        <div className="bg-secondaryBackground-light dark:bg-secondaryBackground-dark p-4 rounded-lg w-full md:w-1/2 flex flex-col gap-4 items-center">
           <Text intent={"title"} text={"Social Queue 🙂"} />
           <FeatureTable features={socialQueueFeatures} type="socialqueue" />
         </div>
@@ -104,7 +104,7 @@ const FeaturesSection = () => {
         intent={"jumboTitle"}
         text={"Dead Simple Social Media Management"}
       />
-      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-gray-900 p-4 rounded-lg">
+      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-secondaryBackground-light dark:bg-secondaryBackground-dark p-4 rounded-lg">
         <div className="flex flex-col gap-4 w-full md:w-1/2">
           <Text
             alignment={"left"}
@@ -126,7 +126,7 @@ const FeaturesSection = () => {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-gray-900 p-4 rounded-lg">
+      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-secondaryBackground-light dark:bg-secondaryBackground-dark p-4 rounded-lg">
         <div className="flex flex-col gap-4 w-full md:w-1/2">
           <Text
             alignment={"left"}
@@ -148,7 +148,7 @@ const FeaturesSection = () => {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-gray-900 p-4 rounded-lg">
+      <div className="flex flex-col md:flex-row gap-4 items-center mt-8 bg-secondaryBackground-light dark:bg-secondaryBackground-dark p-4 rounded-lg">
         <div className="flex flex-col gap-4 w-full">
           <Text
             alignment={"left"}
@@ -176,7 +176,6 @@ const OpenSource = () => {
         alignment={"center"}
         intent={"title"}
         text={"Proudly Open Source"}
-        color="white"
       />
       <Text
         alignment={"center"}
@@ -184,7 +183,6 @@ const OpenSource = () => {
         text={
           "We are proud to be an open source project that operates with 100% transparency. You have full access to the code at all times so you know exactly what we're doing."
         }
-        color="white"
       />
       <Button href={"https://github.com/YourAverageTechBro/social-queue"}>
         Check Us Out On Github
@@ -199,7 +197,6 @@ const CallToAction = () => (
       alignment={"center"}
       intent={"title"}
       text={"Ready to simplify your social media management?"}
-      color="white"
     />
     <Button href={"/login"}>Get Started</Button>
   </div>

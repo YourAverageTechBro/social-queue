@@ -6,7 +6,7 @@ export default function TikTokLoginButton() {
   return (
     <form action={loginWithTikTok}>
       <button
-        className="p-2 rounded-full flex items-center gap-2 bg-white text-black"
+        className="p-2 rounded-full flex items-center gap-2 bg-secondaryBackground-light dark:bg-secondaryBackground-dark"
         formAction={loginWithTikTok}
         type={"submit"}
       >
