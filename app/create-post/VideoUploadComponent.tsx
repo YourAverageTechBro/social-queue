@@ -634,7 +634,7 @@ export default function VideoUploadComponent({
         <div className={"flex flex-wrap justify-center items-center gap-2"}>
           {instagramAccounts.map((account) => (
             <button
-              className={`p-4 rounded-lg bg-gray-800 flex flex-col justify-center items-center gap-2 ${
+              className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col justify-center items-center gap-2 ${
                 selectedInstagramAccounts.find(
                   (acc) =>
                     acc.instagram_business_account_id ===
@@ -726,7 +726,7 @@ export default function VideoUploadComponent({
           ))}
           {tiktokAccounts.map((account) => (
             <button
-              className={`p-4 rounded-lg bg-gray-800 flex flex-col justify-center items-center gap-2 ${
+              className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col justify-center items-center gap-2 ${
                 selectedTiktokAccounts.find((acc) => acc.id === account.id) &&
                 "border-2 border-orange-500"
               } disabled:opacity-50 min-h-32`}
@@ -791,7 +791,7 @@ export default function VideoUploadComponent({
           ))}
           {youtubeChannels.map((channel) => (
             <button
-              className={`p-4 rounded-lg bg-gray-800 flex flex-col justify-center items-center gap-2 ${
+              className={`p-4 rounded-lg bg-secondaryBackground-light dark:bg-secondaryBackground-dark flex flex-col justify-center items-center gap-2 ${
                 selectedYoutubeChannels.find((ch) => ch.id === channel.id) &&
                 "border-2 border-orange-500"
               } disabled:opacity-50 min-h-32`}

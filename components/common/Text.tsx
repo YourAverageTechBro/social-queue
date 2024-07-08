@@ -9,8 +9,6 @@ const textStyles = cva("", {
       body: "text-md",
     },
     color: {
-      black: "text-black",
-      white: "text-white",
       error: "text-red-500",
       accent: "text-orange-600",
       secondary: "text-gray-400",
@@ -23,7 +21,6 @@ const textStyles = cva("", {
   },
   defaultVariants: {
     intent: "body",
-    color: "white",
     alignment: "center",
   },
 });
@@ -35,18 +32,11 @@ type TextProps = {
 
 export interface Props extends TextProps, VariantProps<typeof textStyles> {}
 
-const Text = ({
-  intent,
-  color,
-  alignment,
-  additionalStyles,
-  ...props
-}: Props) => (
+const Text = ({ intent, alignment, additionalStyles, ...props }: Props) => (
   <p
     className={`${textStyles({
       alignment,
       intent,
-      color,
     })} ${additionalStyles}`}
   >
     {props.text}

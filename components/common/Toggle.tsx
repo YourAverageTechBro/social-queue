@@ -44,7 +44,7 @@ export default function Toggle({
           />
         </Switch>
         <Switch.Label as="span" className="ml-3 text-sm flex items-center">
-          {label && <span className="font-medium text-white">{label}</span>}
+          {label && <span className="font-medium ">{label}</span>}
           {toolTipId && toolTipString && (
             <span
               className="ml-2 text-white"

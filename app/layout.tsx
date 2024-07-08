@@ -6,7 +6,14 @@ import { Toaster } from "react-hot-toast";
 import { AxiomWebVitals } from "next-axiom";
 import HeaderBar from "@/components/common/HeaderBar";
 import { Metadata } from "next";
-import { getURL } from "@/utils/utils";
+import { cn, getURL } from "@/utils/utils";
+import { Inter as FontSans } from "next/font/google";
+import { ThemeProvider } from "@/components/common/ThemeProvider";
+
+const fontSans = FontSans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 const meta = {
   title: "Social Media Management For Everyone | SocialQueue.ai",
@@ -69,11 +76,20 @@ export default function RootLayout({
         <FacebookProvider />
       </Suspense>
       <CSPostHogProvider>
-        <body className="bg-background text-foreground">
+        <body
+          className={cn("bg-background text-foreground", fontSans.variable)}
+        >
           <main className="min-h-screen flex flex-col items-center">
-            <HeaderBar />
-            {children}
-            <Toaster />
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <HeaderBar />
+              {children}
+              <Toaster />
+            </ThemeProvider>
           </main>
         </body>
       </CSPostHogProvider>

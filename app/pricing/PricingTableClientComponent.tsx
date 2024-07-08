@@ -42,7 +42,9 @@ export default function PricingTableClientComponent({
       <div className="flex justify-center mb-8">
         <button
           className={`px-4 py-2 rounded-l-lg ${
-            !isYearly ? "bg-orange-600 text-white" : "bg-gray-700"
+            !isYearly
+              ? "bg-orange-600 text-white"
+              : "bg-secondaryBackground-light dark:bg-secondaryBackground-dark"
           }`}
           onClick={handleToggle}
         >
@@ -50,7 +52,9 @@ export default function PricingTableClientComponent({
         </button>
         <button
           className={`px-4 py-2 rounded-r-lg ${
-            isYearly ? "bg-orange-600 text-white" : "bg-gray-700"
+            isYearly
+              ? "bg-orange-600 text-white"
+              : "bg-secondaryBackground-light dark:bg-secondaryBackground-dark"
           }`}
           onClick={handleToggle}
         >
@@ -58,7 +62,7 @@ export default function PricingTableClientComponent({
         </button>
       </div>
       <div className="flex flex-col md:flex-row justify-center gap-8">
-        <div className="pricing-card bg-gray-800 p-6 rounded-lg shadow-lg">
+        <div className="pricing-card bg-secondaryBackground-light dark:bg-secondaryBackground-dark p-6 rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Basic</h2>
           <p className="text-4xl font-bold mb-4">Free</p>
           <ul className="mb-4 list-disc list-inside">
@@ -70,7 +74,7 @@ export default function PricingTableClientComponent({
           </ul>
           <Button href="/login">Get Started</Button>
         </div>
-        <div className="pricing-card bg-gray-800 p-6 rounded-lg shadow-lg">
+        <div className="pricing-card bg-secondaryBackground-light dark:bg-secondaryBackground-dark p-6 rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Pro </h2>
           <div className="flex items-baseline text-4xl font-bold mb-2 gap-4">
             <div>
