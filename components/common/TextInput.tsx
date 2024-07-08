@@ -38,7 +38,7 @@ export default function TextInput({
       {title && <div className="text-sm font-bold">{title}</div>}
       <input
         className={
-          "rounded-lg p-2 text-lg text-black w-full border-2 " +
+          "rounded-lg p-2 text-lg w-full border-2 " +
           (error ? "border-red-500" : "border-gray-500")
         }
         name={name}
