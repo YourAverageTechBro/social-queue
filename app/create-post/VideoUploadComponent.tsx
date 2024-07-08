@@ -36,6 +36,7 @@ import {
   InstagramAccountWithVideoRestrictions,
   YoutubeChannelWithVideoRestrictions,
 } from "../actions/socialMediaAccounts";
+import ChevronDownIcon from "@heroicons/react/24/outline/ChevronDownIcon";
 
 const bucketName =
   process.env.NEXT_PUBLIC_SOCIAL_MEDIA_POST_MEDIA_FILES_STORAGE_BUCKET;
@@ -181,6 +182,8 @@ export default function VideoUploadComponent({
   });
   const [tiktokTitle, setTiktokTitle] = useState<string>("");
   const [showWatermark, setShowWatermark] = useState<boolean>(true);
+  const [showTikTokAdditionalSettings, setShowTikTokAdditionalSettings] =
+    useState<boolean>(false);
   let logger = useLogger();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -955,88 +958,108 @@ export default function VideoUploadComponent({
                 styleOverride="w-full"
               />
 
-              {!containsPhotos && (
-                <>
-                  <div className="flex items-center justify-between w-full">
-                    <Text intent="subtitle" text="Disable Duet" />
-                    <Toggle enabled={disableDuet} setEnabled={setDisableDuet} />
-                  </div>
-                  <div className="flex items-center justify-between w-full">
-                    <Text intent="subtitle" text="Disable Stitch" />
-                    <Toggle
-                      enabled={disableStitch}
-                      setEnabled={setDisableStitch}
-                    />
-                  </div>
-                </>
-              )}
-
               <div className="flex items-center justify-between w-full">
-                <Text intent="subtitle" text="Disable Comments" />
-                <Toggle
-                  enabled={disableComment}
-                  setEnabled={setDisableComment}
+                <Text intent="subtitle" text="Additional TikTok Settings" />
+                <ChevronDownIcon
+                  className={`h-6 w-6 ${
+                    showTikTokAdditionalSettings ? "rotate-180" : ""
+                  }`}
+                  onClick={() =>
+                    setShowTikTokAdditionalSettings(
+                      !showTikTokAdditionalSettings
+                    )
+                  }
                 />
               </div>
-
-              {containsPhotos && (
-                <div className="flex items-center justify-between w-full">
-                  <Text intent="subtitle" text="Auto Add Music" />
-                  <Toggle
-                    enabled={tiktokAutoAddMusicToPhotos}
-                    setEnabled={setTiktokAutoAddMusicToPhotos}
-                  />
-                </div>
-              )}
-
-              <div className="w-full flex flex-col gap-2">
-                <div className="flex items-center justify-between w-full">
-                  <Text intent="subtitle" text="Disclose Video Content" />
-                  <Toggle
-                    enabled={tiktokShouldDiscloseContent}
-                    setEnabled={setTiktokShouldDiscloseContent}
-                  />
-                </div>
-                {tiktokShouldDiscloseContent && (
-                  <div className="rounded-lg p-4 bg-orange-400 flex items-center gap-2">
-                    <InformationCircleIcon className="h-6 w-6 text-white" />
-                    <Text text='Your video will be labeled "Promotional Content". This cannot be changed once your video is posted.' />
-                  </div>
-                )}
-                <Text
-                  alignment={"left"}
-                  text="Turn on to disclose that this video promotes goods or services in exchange for something of value. Your video could promote yourself, a third party, or both."
-                />
-              </div>
-              {tiktokShouldDiscloseContent && (
+              {showTikTokAdditionalSettings && (
                 <>
-                  <div className="w-full flex flex-col gap-2">
-                    <div className="flex items-center justify-between w-full">
-                      <Text intent="subtitle" text="Your Brand" />
-                      <Toggle
-                        enabled={tiktokIsYourBrandPromotion}
-                        setEnabled={setTiktokIsYourBrandPromotion}
-                      />
-                    </div>
-                    <Text
-                      alignment={"left"}
-                      text="You are promoting yourself or your own business. This video will be classified as Business Organic."
+                  {!containsPhotos && (
+                    <>
+                      <div className="flex items-center justify-between w-full">
+                        <Text intent="subtitle" text="Disable Duet" />
+                        <Toggle
+                          enabled={disableDuet}
+                          setEnabled={setDisableDuet}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between w-full">
+                        <Text intent="subtitle" text="Disable Stitch" />
+                        <Toggle
+                          enabled={disableStitch}
+                          setEnabled={setDisableStitch}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex items-center justify-between w-full">
+                    <Text intent="subtitle" text="Disable Comments" />
+                    <Toggle
+                      enabled={disableComment}
+                      setEnabled={setDisableComment}
                     />
                   </div>
 
-                  <div className="w-full flex flex-col gap-2">
+                  {containsPhotos && (
                     <div className="flex items-center justify-between w-full">
-                      <Text intent="subtitle" text="Branded Content" />
+                      <Text intent="subtitle" text="Auto Add Music" />
                       <Toggle
-                        enabled={tiktokIsBrandedContent}
-                        setEnabled={setTiktokIsBrandedContent}
+                        enabled={tiktokAutoAddMusicToPhotos}
+                        setEnabled={setTiktokAutoAddMusicToPhotos}
                       />
                     </div>
+                  )}
+
+                  <div className="w-full flex flex-col gap-2">
+                    <div className="flex items-center justify-between w-full">
+                      <Text intent="subtitle" text="Disclose Video Content" />
+                      <Toggle
+                        enabled={tiktokShouldDiscloseContent}
+                        setEnabled={setTiktokShouldDiscloseContent}
+                      />
+                    </div>
+                    {tiktokShouldDiscloseContent && (
+                      <div className="rounded-lg p-4 bg-orange-400 flex items-center gap-2">
+                        <InformationCircleIcon className="h-6 w-6 text-white" />
+                        <Text text='Your video will be labeled "Promotional Content". This cannot be changed once your video is posted.' />
+                      </div>
+                    )}
                     <Text
                       alignment={"left"}
-                      text="You are promoting another brand or a third party. This video will be classified as Branded Content."
+                      text="Turn on to disclose that this video promotes goods or services in exchange for something of value. Your video could promote yourself, a third party, or both."
                     />
                   </div>
+                  {tiktokShouldDiscloseContent && (
+                    <>
+                      <div className="w-full flex flex-col gap-2">
+                        <div className="flex items-center justify-between w-full">
+                          <Text intent="subtitle" text="Your Brand" />
+                          <Toggle
+                            enabled={tiktokIsYourBrandPromotion}
+                            setEnabled={setTiktokIsYourBrandPromotion}
+                          />
+                        </div>
+                        <Text
+                          alignment={"left"}
+                          text="You are promoting yourself or your own business. This video will be classified as Business Organic."
+                        />
+                      </div>
+
+                      <div className="w-full flex flex-col gap-2">
+                        <div className="flex items-center justify-between w-full">
+                          <Text intent="subtitle" text="Branded Content" />
+                          <Toggle
+                            enabled={tiktokIsBrandedContent}
+                            setEnabled={setTiktokIsBrandedContent}
+                          />
+                        </div>
+                        <Text
+                          alignment={"left"}
+                          text="You are promoting another brand or a third party. This video will be classified as Branded Content."
+                        />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
