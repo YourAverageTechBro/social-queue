@@ -184,7 +184,9 @@ export default function VideoUploadComponent({
   const [showWatermark, setShowWatermark] = useState<boolean>(true);
   const [showTikTokAdditionalSettings, setShowTikTokAdditionalSettings] =
     useState<boolean>(false);
-  let logger = useLogger();
+  let logger = useLogger().with({
+    component: "VideoUploadComponent",
+  });
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
