@@ -407,14 +407,12 @@ export default function VideoUploadComponent({
       .upload(filePath, file, { upsert: true });
     if (uploadError) {
       logger.error(errorString, uploadError);
-      console.error(uploadError);
       throw uploadError;
     }
     if (!uploadResponse?.path) {
       logger.error(errorString, {
         error: "No file path found in response from Supabase",
       });
-      console.error("No file path found in response from Supabase");
       throw new Error("No file path found in response from Supabase");
     }
 
@@ -454,6 +452,24 @@ export default function VideoUploadComponent({
       selectedInstagramAccounts.forEach((account) => {
         setInstagramAccountIdToProcessingState({
           [account.instagram_business_account_id]: {
+            state: "error",
+            message: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+      });
+
+      selectedTiktokAccounts.forEach((account) => {
+        setTiktokAccountIdToProcessingState({
+          [account.id]: {
+            state: "error",
+            message: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+      });
+
+      selectedYoutubeChannels.forEach((channel) => {
+        setYoutubeChannelIdToProcessingState({
+          [channel.id]: {
             state: "error",
             message: error instanceof Error ? error.message : "Unknown error",
           },
