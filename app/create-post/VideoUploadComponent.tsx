@@ -407,14 +407,14 @@ export default function VideoUploadComponent({
       .upload(filePath, file, { upsert: true });
     if (uploadError) {
       logger.error(errorString, uploadError);
-      throw Error(
-        "Sorry, we had an issue uploading your file. Please try again."
-      );
+      console.error(uploadError);
+      throw uploadError;
     }
     if (!uploadResponse?.path) {
       logger.error(errorString, {
         error: "No file path found in response from Supabase",
       });
+      console.error("No file path found in response from Supabase");
       throw new Error("No file path found in response from Supabase");
     }
 
@@ -428,10 +428,8 @@ export default function VideoUploadComponent({
 
     if (insertError) {
       logger.error(errorString, insertError);
-      await logger.flush();
-      throw Error(
-        "Sorry, we had an issue uploading your file. Please try again."
-      );
+      console.error(insertError);
+      throw insertError;
     }
 
     logger.info("Social media post file uploaded", { file: file.name });
@@ -444,167 +442,184 @@ export default function VideoUploadComponent({
     socialMediaPostId: string;
   }) => {
     const file = files[0];
-    const filePath = await uploadSocialMediaPostFile({
-      userId,
-      file,
-      index: 0,
-      postId: socialMediaPostId,
-    });
-    selectedInstagramAccounts.forEach((account) => {
-      setInstagramAccountIdToProcessingState({
-        [account.instagram_business_account_id]: {
-          state: "processing",
-          message: "Processing",
-        },
-      });
-      const caption = showWatermark
-        ? `${instagramCaption} — posted from SocialQueue.ai`
-        : instagramCaption;
-      createInstagramContainer({
-        instagramBusinessAccountId: account.instagram_business_account_id,
-        filePath,
-        caption,
+    let filePath = "";
+    try {
+      filePath = await uploadSocialMediaPostFile({
         userId,
-        postType: file.type.includes("video") ? "video" : "image",
-        isCarouselItem: false,
-      })
-        .then((containerId) =>
-          checkInstagramContainerStatus({
-            containerIds: [containerId],
-            instagramBusinessAccountId: account.instagram_business_account_id,
-            userId,
-          }).then(() => {
-            publishInstagramMediaContainer({
-              instagramMediaContainerId: containerId,
+        file,
+        index: 0,
+        postId: socialMediaPostId,
+      });
+    } catch (error) {
+      selectedInstagramAccounts.forEach((account) => {
+        setInstagramAccountIdToProcessingState({
+          [account.instagram_business_account_id]: {
+            state: "error",
+            message: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+      });
+    }
+    if (filePath) {
+      selectedInstagramAccounts.forEach((account) => {
+        setInstagramAccountIdToProcessingState({
+          [account.instagram_business_account_id]: {
+            state: "processing",
+            message: "Processing",
+          },
+        });
+        const caption = showWatermark
+          ? `${instagramCaption} — posted from SocialQueue.ai`
+          : instagramCaption;
+        createInstagramContainer({
+          instagramBusinessAccountId: account.instagram_business_account_id,
+          filePath,
+          caption,
+          userId,
+          postType: file.type.includes("video") ? "video" : "image",
+          isCarouselItem: false,
+        })
+          .then((containerId) =>
+            checkInstagramContainerStatus({
+              containerIds: [containerId],
               instagramBusinessAccountId: account.instagram_business_account_id,
               userId,
-            }).then((instagramMediaId) => {
-              saveInstagramId({
-                instagramMediaId,
-                parentSocialMediaPostId: socialMediaPostId,
-                caption: `${instagramCaption} — posted from SocialQueue.ai`,
+            }).then(() => {
+              publishInstagramMediaContainer({
+                instagramMediaContainerId: containerId,
+                instagramBusinessAccountId:
+                  account.instagram_business_account_id,
                 userId,
-                instagramAccountId: account.id,
+              }).then((instagramMediaId) => {
+                saveInstagramId({
+                  instagramMediaId,
+                  parentSocialMediaPostId: socialMediaPostId,
+                  caption: `${instagramCaption} — posted from SocialQueue.ai`,
+                  userId,
+                  instagramAccountId: account.id,
+                });
+                setInstagramAccountIdToProcessingState({
+                  [account.instagram_business_account_id]: {
+                    state: "posted",
+                    message: "Posted",
+                  },
+                });
               });
-              setInstagramAccountIdToProcessingState({
-                [account.instagram_business_account_id]: {
-                  state: "posted",
-                  message: "Posted",
-                },
-              });
+            })
+          )
+          .catch((error) => {
+            setInstagramAccountIdToProcessingState({
+              [account.instagram_business_account_id]: {
+                state: "error",
+                message:
+                  error instanceof Error ? error.message : "Unknown error",
+              },
             });
-          })
-        )
-        .catch((error) => {
-          setInstagramAccountIdToProcessingState({
-            [account.instagram_business_account_id]: {
-              state: "error",
-              message: error instanceof Error ? error.message : "Unknown error",
-            },
           });
+      });
+      selectedTiktokAccounts.forEach((account) => {
+        setTiktokAccountIdToProcessingState({
+          [account.id]: {
+            state: "processing",
+            message: "Processing",
+          },
         });
-    });
-    selectedTiktokAccounts.forEach((account) => {
-      setTiktokAccountIdToProcessingState({
-        [account.id]: {
-          state: "processing",
-          message: "Processing",
-        },
-      });
-      const caption = showWatermark
-        ? `${tiktokCaption} — posted from SocialQueue.ai`
-        : tiktokCaption;
-      uploadTikTokPost({
-        userId,
-        caption,
-        autoAddMusic: tiktokAutoAddMusicToPhotos,
-        brandOrganicToggle: tiktokIsYourBrandPromotion,
-        brandContentToggle: tiktokIsBrandedContent,
-        accessToken: account.access_token,
-        filePath,
-        privacyLevel: tiktokPrivacyLevel.value,
-        disableDuet,
-        disableComment,
-        disableStitch,
-        videoCoverTimestamp: 0,
-        postType: file.type.includes("video") ? "video" : "image",
-      }).then((publishId) =>
-        checkTikTokPublishStatus({
-          publishIds: [publishId],
+        const caption = showWatermark
+          ? `${tiktokCaption} — posted from SocialQueue.ai`
+          : tiktokCaption;
+        uploadTikTokPost({
+          userId,
+          caption,
+          autoAddMusic: tiktokAutoAddMusicToPhotos,
+          brandOrganicToggle: tiktokIsYourBrandPromotion,
+          brandContentToggle: tiktokIsBrandedContent,
           accessToken: account.access_token,
-        }).then(() => {
-          writeTikTokPostToSupabase({
-            userId,
-            caption,
-            publishId,
-            privacyLevel: "SELF_ONLY",
-            disableDuet,
-            disableComment,
-            videoCoverTimestamp: 0,
-            parentSocialMediaPostId: socialMediaPostId,
-            tiktokAccountId: account.id,
-          });
-          setTiktokAccountIdToProcessingState({
-            [account.id]: {
-              state: "posted",
-              message: "Posted",
-            },
-          });
-        })
-      );
-    });
-    selectedYoutubeChannels.forEach((channel) => {
-      setYoutubeChannelIdToProcessingState({
-        [channel.id]: {
-          state: "processing",
-          message: "Processing",
-        },
-      });
-      const formData = new FormData();
-      const title = showWatermark
-        ? `${youtubeTitle} — posted from SocialQueue.ai`
-        : youtubeTitle;
-      formData.append("youtubeChannelId", channel.id);
-      formData.append("videoPath", filePath);
-      formData.append("title", title);
-      formData.append("userId", userId);
-      formData.append("parentSocialMediaPostId", socialMediaPostId);
-      formData.append("isPrivate", privateYoutube.toString());
-      fetch("/api/youtube/post", {
-        method: "POST",
-        body: formData,
-      })
-        .then((resp) => {
-          if (resp.ok) {
-            setYoutubeChannelIdToProcessingState({
-              [channel.id]: {
+          filePath,
+          privacyLevel: tiktokPrivacyLevel.value,
+          disableDuet,
+          disableComment,
+          disableStitch,
+          videoCoverTimestamp: 0,
+          postType: file.type.includes("video") ? "video" : "image",
+        }).then((publishId) =>
+          checkTikTokPublishStatus({
+            publishIds: [publishId],
+            accessToken: account.access_token,
+          }).then(() => {
+            writeTikTokPostToSupabase({
+              userId,
+              caption,
+              publishId,
+              privacyLevel: "SELF_ONLY",
+              disableDuet,
+              disableComment,
+              videoCoverTimestamp: 0,
+              parentSocialMediaPostId: socialMediaPostId,
+              tiktokAccountId: account.id,
+            });
+            setTiktokAccountIdToProcessingState({
+              [account.id]: {
                 state: "posted",
                 message: "Posted",
               },
             });
-          } else {
-            resp.json().then((data: { message: string }) => {
+          })
+        );
+      });
+      selectedYoutubeChannels.forEach((channel) => {
+        setYoutubeChannelIdToProcessingState({
+          [channel.id]: {
+            state: "processing",
+            message: "Processing",
+          },
+        });
+        const formData = new FormData();
+        const title = showWatermark
+          ? `${youtubeTitle} — posted from SocialQueue.ai`
+          : youtubeTitle;
+        formData.append("youtubeChannelId", channel.id);
+        formData.append("videoPath", filePath);
+        formData.append("title", title);
+        formData.append("userId", userId);
+        formData.append("parentSocialMediaPostId", socialMediaPostId);
+        formData.append("isPrivate", privateYoutube.toString());
+        fetch("/api/youtube/post", {
+          method: "POST",
+          body: formData,
+        })
+          .then((resp) => {
+            if (resp.ok) {
               setYoutubeChannelIdToProcessingState({
                 [channel.id]: {
-                  state: "error",
-                  message: data.message,
+                  state: "posted",
+                  message: "Posted",
                 },
               });
+            } else {
+              resp.json().then((data: { message: string }) => {
+                setYoutubeChannelIdToProcessingState({
+                  [channel.id]: {
+                    state: "error",
+                    message: data.message,
+                  },
+                });
+              });
+            }
+          })
+          .catch((error) => {
+            logger.error(errorString, {
+              error: error instanceof Error ? error.message : error,
             });
-          }
-        })
-        .catch((error) => {
-          logger.error(errorString, {
-            error: error instanceof Error ? error.message : error,
+            setYoutubeChannelIdToProcessingState({
+              [channel.id]: {
+                state: "error",
+                message:
+                  error instanceof Error ? error.message : "Unknown error",
+              },
+            });
           });
-          setYoutubeChannelIdToProcessingState({
-            [channel.id]: {
-              state: "error",
-              message: error instanceof Error ? error.message : "Unknown error",
-            },
-          });
-        });
-    });
+      });
+    }
   };
 
   const containsPhotos = files.some((file) => file.type.includes("image"));
